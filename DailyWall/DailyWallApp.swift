@@ -35,6 +35,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         // Initialize menu bar controller and keep a strong reference
         menuBarController = MenuBarController()
-        print("Menu bar controller initialized: \(menuBarController)")
+        print("Menu bar controller initialized: \(String(describing: menuBarController))")
     }
 }
+

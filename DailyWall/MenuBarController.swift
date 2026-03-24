@@ -3,9 +3,11 @@ import Combine
 
 @MainActor
 class MenuBarController: NSObject, ObservableObject {
-    private var statusItem: NSStatusItem?
-    private var refreshTimer: Timer?
-    
+    enum ImageSource: String, CaseIterable {
+        case bing = "Bing"
+        case picsum = "Picsum (Random 4K)"
+    }
+
     @Published var autoRefreshEnabled: Bool {
         didSet {
             UserDefaults.standard.set(autoRefreshEnabled, forKey: "autoRefreshEnabled")
@@ -37,11 +39,27 @@ class MenuBarController: NSObject, ObservableObject {
         }
     }
     
+    @Published var imageSource: ImageSource {
+        didSet {
+            UserDefaults.standard.set(imageSource.rawValue, forKey: "imageSource")
+            updateMenuBar()
+        }
+    }
+    
+    private var statusItem: NSStatusItem?
+    private var refreshTimer: Timer?
+    
     override init() {
         // Initialize properties BEFORE super.init()
         self.autoRefreshEnabled = UserDefaults.standard.bool(forKey: "autoRefreshEnabled")
         self.refreshTime = UserDefaults.standard.string(forKey: "refreshTime") ?? "08:00"
         self.lastUpdateTime = UserDefaults.standard.object(forKey: "lastUpdateTime") as? Date
+        
+        if let saved = UserDefaults.standard.string(forKey: "imageSource"), let src = ImageSource(rawValue: saved) {
+            self.imageSource = src
+        } else {
+            self.imageSource = .bing
+        }
         
         super.init()
         print("MenuBarController init called")
@@ -72,7 +90,7 @@ class MenuBarController: NSObject, ObservableObject {
         print("Button obtained successfully")
         
         // Set image
-        button.image = NSImage(systemSymbolName: "photo.fill", accessibilityDescription: "Set Bing Wallpaper")
+        button.image = NSImage(named: "MenuBarIcon")
         button.image?.isTemplate = true
         print("Image set")
         
@@ -111,6 +129,22 @@ class MenuBarController: NSObject, ObservableObject {
         refreshTimeItem.submenu = refreshTimeMenu
         menu.addItem(refreshTimeItem)
         
+        // Image Source Submenu
+        let sourceMenu = NSMenu()
+        for source in ImageSource.allCases {
+            let item = NSMenuItem(title: source.rawValue, action: #selector(setImageSource(_:)), keyEquivalent: "")
+            item.target = self
+            item.state = (source == imageSource) ? .on : .off
+            item.representedObject = source.rawValue
+            sourceMenu.addItem(item)
+        }
+        let sourceItem = NSMenuItem(title: "Image Source", action: nil, keyEquivalent: "")
+        sourceItem.submenu = sourceMenu
+        menu.addItem(sourceItem)
+        
+        // Removed Unsplash API key menu item and its separator
+        
+        // Separator before Last Update Time (ensure only one)
         menu.addItem(NSMenuItem.separator())
         
         // Last Update Time
@@ -144,6 +178,12 @@ class MenuBarController: NSObject, ObservableObject {
     
     @objc private func setRefreshTime(_ sender: NSMenuItem) {
         refreshTime = sender.title
+    }
+    
+    @objc private func setImageSource(_ sender: NSMenuItem) {
+        if let raw = sender.representedObject as? String, let src = ImageSource(rawValue: raw) {
+            imageSource = src
+        }
     }
     
     private func scheduleRefresh() {
@@ -181,7 +221,14 @@ class MenuBarController: NSObject, ObservableObject {
     @objc private func setWallpaper() {
         Task {
             do {
-                guard let imageURL = try await fetchBingWallpaperURL() else { return }
+                let imageURL: URL?
+                switch self.imageSource {
+                case .bing:
+                    imageURL = try await self.fetchBingWallpaperURL()
+                case .picsum:
+                    imageURL = try await self.fetchPicsumWallpaperURL()
+                }
+                guard let imageURL else { return }
                 let localPath = try await downloadImage(from: imageURL)
                 try setDesktopWallpaper(to: localPath)
                 self.lastUpdateTime = Date()
@@ -206,13 +253,24 @@ class MenuBarController: NSObject, ObservableObject {
         return fullURL
     }
     
+    private func fetchPicsumWallpaperURL() async throws -> URL? {
+        // Lorem Picsum provides random images without API keys.
+        // Use a large size to approximate 4K (e.g., 3840x2160). The service will return a random image at that size.
+        // We can also use /id/{id}/{w}/{h} but for random, /3840/2160 is sufficient.
+        if let url = URL(string: "https://picsum.photos/3840/2160") {
+            print("Using Picsum random 4K URL: \(url)")
+            return url
+        }
+        return nil
+    }
+    
     private func downloadImage(from url: URL) async throws -> String {
         print("Downloading image from: \(url.absoluteString)")
         let (data, _) = try await URLSession.shared.data(from: url)
         let fileManager = FileManager.default
         
         let tempDir = FileManager.default.temporaryDirectory
-        let fileURL = tempDir.appendingPathComponent("bing_wallpaper.jpg")
+        let fileURL = tempDir.appendingPathComponent("dailywall_wallpaper.jpg")
         
         try? fileManager.removeItem(at: fileURL)
         

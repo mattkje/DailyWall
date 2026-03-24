@@ -1,11 +1,12 @@
 {
   "fill" : {
-    "automatic-gradient" : "srgb:0.26052,0.26052,0.26052,1.00000"
+    "automatic-gradient" : "srgb:0.02151,0.57811,0.50000,1.00000"
   },
   "groups" : [
     {
       "layers" : [
         {
+          "fill" : "automatic",
           "glass" : true,
           "image-name" : "cam-3.svg",
           "name" : "cam-3",
