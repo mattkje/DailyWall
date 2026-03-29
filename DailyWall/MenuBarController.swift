@@ -4,8 +4,9 @@ import Combine
 @MainActor
 class MenuBarController: NSObject, ObservableObject {
     enum ImageSource: String, CaseIterable {
-        case bing = "Bing"
-        case picsum = "Picsum (Random 4K)"
+        case bing = "Bing (Only 1080p)"
+        case picsum = "Picsum"
+        case pexels = "Pexels"
     }
 
     @Published var autoRefreshEnabled: Bool {
@@ -45,6 +46,16 @@ class MenuBarController: NSObject, ObservableObject {
             updateMenuBar()
         }
     }
+
+    @Published var everyHourEnabled: Bool {
+        didSet {
+            UserDefaults.standard.set(everyHourEnabled, forKey: "everyHourEnabled")
+            updateMenuBar()
+            if autoRefreshEnabled {
+                scheduleRefresh()
+            }
+        }
+    }
     
     private var statusItem: NSStatusItem?
     private var refreshTimer: Timer?
@@ -54,6 +65,7 @@ class MenuBarController: NSObject, ObservableObject {
         self.autoRefreshEnabled = UserDefaults.standard.bool(forKey: "autoRefreshEnabled")
         self.refreshTime = UserDefaults.standard.string(forKey: "refreshTime") ?? "08:00"
         self.lastUpdateTime = UserDefaults.standard.object(forKey: "lastUpdateTime") as? Date
+        self.everyHourEnabled = UserDefaults.standard.bool(forKey: "everyHourEnabled")
         
         if let saved = UserDefaults.standard.string(forKey: "imageSource"), let src = ImageSource(rawValue: saved) {
             self.imageSource = src
@@ -106,25 +118,34 @@ class MenuBarController: NSObject, ObservableObject {
         let setWallpaperItem = NSMenuItem(title: "Set Wallpaper Now", action: #selector(setWallpaper), keyEquivalent: "w")
         setWallpaperItem.target = self
         menu.addItem(setWallpaperItem)
-        
+  
         menu.addItem(NSMenuItem.separator())
         
-        // Auto Refresh Toggle
+    
         let autoRefreshTitle = autoRefreshEnabled ? "✓ Auto Refresh" : "Auto Refresh"
         let autoRefreshItem = NSMenuItem(title: autoRefreshTitle, action: #selector(toggleAutoRefresh), keyEquivalent: "")
         autoRefreshItem.target = self
         menu.addItem(autoRefreshItem)
-        
-        // Refresh Time Submenu
+
         let refreshTimeMenu = NSMenu()
-        let times = ["06:00", "07:00", "08:00", "09:00", "10:00", "12:00", "18:00", "21:00"]
+
+        let times = [
+            "00:00","01:00","02:00","03:00","04:00","05:00","06:00","07:00","08:00","09:00","10:00","11:00",
+            "12:00","13:00","14:00","15:00","16:00","17:00","18:00","19:00","20:00","21:00","22:00","23:00"
+        ]
         for time in times {
             let timeItem = NSMenuItem(title: time, action: #selector(setRefreshTime(_:)), keyEquivalent: "")
             timeItem.target = self
-            timeItem.state = (time == refreshTime) ? .on : .off
+            timeItem.state = (!everyHourEnabled && time == refreshTime) ? .on : .off
             refreshTimeMenu.addItem(timeItem)
         }
-        
+
+        refreshTimeMenu.addItem(NSMenuItem.separator())
+        let everyHourTitle = everyHourEnabled ? "✓ Every Hour" : "Every Hour"
+        let everyHourItem = NSMenuItem(title: everyHourTitle, action: #selector(toggleEveryHour), keyEquivalent: "")
+        everyHourItem.target = self
+        refreshTimeMenu.addItem(everyHourItem)
+
         let refreshTimeItem = NSMenuItem(title: "Refresh Time", action: nil, keyEquivalent: "")
         refreshTimeItem.submenu = refreshTimeMenu
         menu.addItem(refreshTimeItem)
@@ -142,12 +163,8 @@ class MenuBarController: NSObject, ObservableObject {
         sourceItem.submenu = sourceMenu
         menu.addItem(sourceItem)
         
-        // Removed Unsplash API key menu item and its separator
-        
-        // Separator before Last Update Time (ensure only one)
         menu.addItem(NSMenuItem.separator())
         
-        // Last Update Time
         let lastUpdateTitle: String
         if let lastUpdate = lastUpdateTime {
             let formatter = DateFormatter()
@@ -160,6 +177,13 @@ class MenuBarController: NSObject, ObservableObject {
         let lastUpdateItem = NSMenuItem(title: lastUpdateTitle, action: nil, keyEquivalent: "")
         lastUpdateItem.isEnabled = false
         menu.addItem(lastUpdateItem)
+        
+        menu.addItem(NSMenuItem.separator())
+        
+        // About
+        let aboutItem = NSMenuItem(title: "About", action: #selector(showAbout), keyEquivalent: "")
+        aboutItem.target = self
+        menu.addItem(aboutItem)
         
         menu.addItem(NSMenuItem.separator())
         
@@ -177,7 +201,12 @@ class MenuBarController: NSObject, ObservableObject {
     }
     
     @objc private func setRefreshTime(_ sender: NSMenuItem) {
+        everyHourEnabled = false
         refreshTime = sender.title
+    }
+    
+    @objc private func toggleEveryHour() {
+        everyHourEnabled.toggle()
     }
     
     @objc private func setImageSource(_ sender: NSMenuItem) {
@@ -190,31 +219,50 @@ class MenuBarController: NSObject, ObservableObject {
         // Cancel existing timer
         refreshTimer?.invalidate()
         refreshTimer = nil
-        
-        // Parse refresh time
+
+        let calendar = Calendar.current
+        let now = Date()
+
+        if everyHourEnabled {
+            // Schedule at the start of the next hour
+            var comps = calendar.dateComponents([.year, .month, .day, .hour], from: now)
+            comps.minute = 0
+            comps.second = 0
+            let startOfHour = calendar.date(from: comps) ?? now
+            var next = startOfHour
+            if next <= now { next = calendar.date(byAdding: .hour, value: 1, to: startOfHour) ?? now.addingTimeInterval(3600) }
+            let interval = next.timeIntervalSinceNow
+            print("Next hourly refresh in \(interval) seconds at \(next)")
+            refreshTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: false) { [weak self] _ in
+                print("Auto-refresh (hourly) triggered")
+                Task { @MainActor in
+                    self?.setWallpaper()
+                    // Schedule the next hour
+                    self?.scheduleRefresh()
+                }
+            }
+            return
+        }
+
+        // Parse refresh time (specific daily time)
         let components = refreshTime.split(separator: ":").compactMap { Int($0) }
         guard components.count == 2 else { return }
-        
         let targetHour = components[0]
         let targetMinute = components[1]
-        
-        // Calculate next refresh time
-        let calendar = Calendar.current
-        var nextRefresh = calendar.date(bySettingHour: targetHour, minute: targetMinute, second: 0, of: Date())!
-        
-        // If the time has passed today, schedule for tomorrow
-        if nextRefresh < Date() {
-            nextRefresh = calendar.date(byAdding: .day, value: 1, to: nextRefresh)!
+
+        var nextRefresh = calendar.date(bySettingHour: targetHour, minute: targetMinute, second: 0, of: now) ?? now
+        if nextRefresh < now {
+            nextRefresh = calendar.date(byAdding: .day, value: 1, to: nextRefresh) ?? now.addingTimeInterval(24*3600)
         }
-        
         let timeInterval = nextRefresh.timeIntervalSinceNow
         print("Next refresh scheduled in \(timeInterval) seconds at \(nextRefresh)")
-        
         refreshTimer = Timer.scheduledTimer(withTimeInterval: timeInterval, repeats: false) { [weak self] _ in
             print("Auto-refresh triggered")
-            self?.setWallpaper()
-            // Reschedule for the next day
-            self?.scheduleRefresh()
+            Task { @MainActor in
+                self?.setWallpaper()
+                // Reschedule for the next day
+                self?.scheduleRefresh()
+            }
         }
     }
     
@@ -227,6 +275,8 @@ class MenuBarController: NSObject, ObservableObject {
                     imageURL = try await self.fetchBingWallpaperURL()
                 case .picsum:
                     imageURL = try await self.fetchPicsumWallpaperURL()
+                case .pexels:
+                    imageURL = try await self.fetchPexelsWallpaperURL()
                 }
                 guard let imageURL else { return }
                 let localPath = try await downloadImage(from: imageURL)
@@ -264,17 +314,77 @@ class MenuBarController: NSObject, ObservableObject {
         return nil
     }
     
+    private func pexelsAPIKey() -> String? {
+        // 1) Prefer env var set via Build Settings or Scheme Environment
+        if let env = ProcessInfo.processInfo.environment["PEXELS_API_KEY"], !env.isEmpty {
+            return env
+        }
+        // 2) Fallback to Info.plist if present
+        if let plist = Bundle.main.object(forInfoDictionaryKey: "PexelsAPIKey") as? String, !plist.isEmpty {
+            return plist
+        }
+        return nil
+    }
+    
+    private func fetchPexelsWallpaperURL() async throws -> URL? {
+
+        guard let apiKey = pexelsAPIKey(), !apiKey.isEmpty else {
+            print("Pexels API key missing. Set 'PEXELS_API_KEY' in build settings or 'PexelsAPIKey' in Info.plist.")
+            return nil
+        }
+
+        var components = URLComponents(string: "https://api.pexels.com/v1/curated")!
+        components.queryItems = [
+            URLQueryItem(name: "per_page", value: "30"),
+            URLQueryItem(name: "orientation", value: "landscape")
+        ]
+        let url = components.url!
+
+        var request = URLRequest(url: url)
+        request.setValue(apiKey, forHTTPHeaderField: "Authorization")
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        if let http = response as? HTTPURLResponse, http.statusCode != 200 {
+            print("Pexels API error: status \(http.statusCode)")
+            return nil
+        }
+
+        let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        guard let photos = json?["photos"] as? [[String: Any]], !photos.isEmpty else {
+            return nil
+        }
+        let randomIndex = Int.random(in: 0..<photos.count)
+        let photo = photos[randomIndex]
+
+        if let src = photo["src"] as? [String: Any] {
+            if let originalString = src["original"] as? String, let originalURL = URL(string: originalString) {
+                print("Fetched Pexels image URL (original): \(originalURL)")
+                return originalURL
+            }
+
+            let fallbackKeys = ["large2x", "large", "landscape"]
+            for key in fallbackKeys {
+                if let str = src[key] as? String, var comps = URLComponents(string: str) {
+                    comps.queryItems = nil
+                    if let cleaned = comps.url {
+                        print("Fetched Pexels image URL (fallback cleaned): \(cleaned)")
+                        return cleaned
+                    }
+                }
+            }
+        }
+        return nil
+    }
+    
     private func downloadImage(from url: URL) async throws -> String {
         print("Downloading image from: \(url.absoluteString)")
         let (data, _) = try await URLSession.shared.data(from: url)
-        let fileManager = FileManager.default
-        
+
         let tempDir = FileManager.default.temporaryDirectory
-        let fileURL = tempDir.appendingPathComponent("dailywall_wallpaper.jpg")
-        
-        try? fileManager.removeItem(at: fileURL)
-        
-        try data.write(to: fileURL)
+        let uniqueName = "dailywall_\(UUID().uuidString).jpg"
+        let fileURL = tempDir.appendingPathComponent(uniqueName)
+
+        try data.write(to: fileURL, options: .atomic)
         print("Image downloaded to: \(fileURL.path)")
         return fileURL.path
     }
@@ -299,4 +409,37 @@ class MenuBarController: NSObject, ObservableObject {
     @objc private func quitApp() {
         NSApp.terminate(nil)
     }
+    
+    @objc private func showAbout() {
+        let alert = NSAlert()
+        
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
+        
+        alert.messageText = "DailyWall"
+        
+        alert.informativeText = """
+        A lightweight macOS menu bar application that automatically updates your desktop wallpaper with beautiful Bing images daily.
+
+        Version \(version) (\(build))
+        Created by Matti Kjellstadli
+
+        mattikjellstadli.com
+        """
+        
+        if let icon = NSImage(named: "AppIcon") ?? NSImage(named: "MenuBarIcon") {
+            alert.icon = icon
+        }
+        
+        alert.addButton(withTitle: "OK")
+        alert.addButton(withTitle: "Visit Website")
+        
+        let response = alert.runModal()
+        
+        if response == .alertSecondButtonReturn,
+           let url = URL(string: "https://mattikjellstadli.com/product/25") {
+            NSWorkspace.shared.open(url)
+        }
+    }
 }
+
