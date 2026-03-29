@@ -329,50 +329,79 @@ class MenuBarController: NSObject, ObservableObject {
     private func fetchPexelsWallpaperURL() async throws -> URL? {
 
         guard let apiKey = pexelsAPIKey(), !apiKey.isEmpty else {
-            print("Pexels API key missing. Set 'PEXELS_API_KEY' in build settings or 'PexelsAPIKey' in Info.plist.")
+            print("Pexels API key missing.")
             return nil
         }
 
-        var components = URLComponents(string: "https://api.pexels.com/v1/curated")!
-        components.queryItems = [
-            URLQueryItem(name: "per_page", value: "30"),
-            URLQueryItem(name: "orientation", value: "landscape")
+        let queries = [
+            "landscape nature",
+            "mountains",
+            "ocean",
+            "forest",
+            "minimal landscape",
+            "abstract gradient",
+            "night sky",
+            "desert",
+            "snow landscape"
         ]
+
+        let query = queries.randomElement() ?? "landscape"
+
+        var components = URLComponents(string: "https://api.pexels.com/v1/search")!
+        components.queryItems = [
+            URLQueryItem(name: "query", value: query),
+            URLQueryItem(name: "per_page", value: "40"),
+            URLQueryItem(name: "orientation", value: "landscape"),
+            URLQueryItem(name: "size", value: "large")
+        ]
+
         let url = components.url!
 
         var request = URLRequest(url: url)
         request.setValue(apiKey, forHTTPHeaderField: "Authorization")
 
         let (data, response) = try await URLSession.shared.data(for: request)
+
         if let http = response as? HTTPURLResponse, http.statusCode != 200 {
             print("Pexels API error: status \(http.statusCode)")
             return nil
         }
 
-        let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-        guard let photos = json?["photos"] as? [[String: Any]], !photos.isEmpty else {
+        guard
+            let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+            let photos = json["photos"] as? [[String: Any]]
+        else {
             return nil
         }
-        let randomIndex = Int.random(in: 0..<photos.count)
-        let photo = photos[randomIndex]
+
+        let filtered = photos.filter { photo in
+            let peopleCount = photo["people"] as? Int ?? 0
+            return peopleCount == 0
+        }
+
+        guard !filtered.isEmpty else {
+            print("No suitable wallpapers found.")
+            return nil
+        }
+
+        let photo = filtered.randomElement()!
 
         if let src = photo["src"] as? [String: Any] {
-            if let originalString = src["original"] as? String, let originalURL = URL(string: originalString) {
-                print("Fetched Pexels image URL (original): \(originalURL)")
+            if let originalString = src["original"] as? String,
+               let originalURL = URL(string: originalString) {
                 return originalURL
             }
 
             let fallbackKeys = ["large2x", "large", "landscape"]
             for key in fallbackKeys {
-                if let str = src[key] as? String, var comps = URLComponents(string: str) {
+                if let str = src[key] as? String,
+                   var comps = URLComponents(string: str) {
                     comps.queryItems = nil
-                    if let cleaned = comps.url {
-                        print("Fetched Pexels image URL (fallback cleaned): \(cleaned)")
-                        return cleaned
-                    }
+                    return comps.url
                 }
             }
         }
+
         return nil
     }
     
