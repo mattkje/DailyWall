@@ -1,15 +1,16 @@
 import SwiftUI
 import Combine
 import Security
+import UserNotifications
 
 @MainActor
 class MenuBarController: NSObject, ObservableObject {
 
     enum BuiltInSource: String, CaseIterable {
         case dailywall = "DailyWall"
-        case bing   = "Bing (Only 1080p)"
-        case picsum = "Picsum"
-        case pexels = "Pexels"
+        case bing      = "Bing (Only 1080p)"
+        case picsum    = "Picsum"
+        case pexels    = "Pexels"
     }
 
     @Published var autoRefreshEnabled: Bool {
@@ -22,13 +23,17 @@ class MenuBarController: NSObject, ObservableObject {
     @Published var refreshTime: String {
         didSet {
             UserDefaults.standard.set(refreshTime, forKey: "refreshTime")
-            updateMenuBar()
             if autoRefreshEnabled { scheduleRefresh() }
         }
     }
     @Published var lastUpdateTime: Date? {
         didSet {
-            if let date = lastUpdateTime { UserDefaults.standard.set(date, forKey: "lastUpdateTime") }
+            if let date = lastUpdateTime {
+                UserDefaults.standard.set(date, forKey: "lastUpdateTime")
+            } else {
+                UserDefaults.standard.removeObject(forKey: "lastUpdateTime")
+            }
+            updateMenuBar()
         }
     }
     @Published var imageSourceSelection: String {
@@ -40,7 +45,6 @@ class MenuBarController: NSObject, ObservableObject {
     @Published var everyHourEnabled: Bool {
         didSet {
             UserDefaults.standard.set(everyHourEnabled, forKey: "everyHourEnabled")
-            updateMenuBar()
             if autoRefreshEnabled { scheduleRefresh() }
         }
     }
@@ -49,21 +53,36 @@ class MenuBarController: NSObject, ObservableObject {
     private var refreshTimer: Timer?
     private let wallpaperManager = WallpaperManager()
     private let sourceProvider   = WallpaperSourceProvider()
+    private var defaultsObservers: [NSKeyValueObservation] = []
+
+    private var refreshOnWake: Bool       { UserDefaults.standard.bool(forKey: "refreshOnWake") }
+    private var notifyOnUpdate: Bool      { UserDefaults.standard.bool(forKey: "notifyOnUpdate") }
+    private var saveToFolder: Bool        { UserDefaults.standard.bool(forKey: "saveToFolder") }
+    private var saveFolder: String        { UserDefaults.standard.string(forKey: "saveFolder") ?? "" }
+    private var excludeHoursEnabled: Bool { UserDefaults.standard.bool(forKey: "excludeHoursEnabled") }
+    private var excludeHourStart: Int     { UserDefaults.standard.object(forKey: "excludeHourStart") as? Int ?? 22 }
+    private var excludeHourEnd: Int       { UserDefaults.standard.object(forKey: "excludeHourEnd")   as? Int ?? 7  }
+    private var wallpaperFillMode: String { UserDefaults.standard.string(forKey: "wallpaperFillMode") ?? "Fill" }
+    private var historyLimit: Int         { UserDefaults.standard.object(forKey: "historyLimit") as? Int ?? 20 }
 
     override init() {
         self.autoRefreshEnabled   = UserDefaults.standard.bool(forKey: "autoRefreshEnabled")
         self.refreshTime          = UserDefaults.standard.string(forKey: "refreshTime") ?? "08:00"
         self.lastUpdateTime       = UserDefaults.standard.object(forKey: "lastUpdateTime") as? Date
         self.everyHourEnabled     = UserDefaults.standard.bool(forKey: "everyHourEnabled")
-        self.imageSourceSelection = UserDefaults.standard.string(forKey: "imageSource") ?? BuiltInSource.bing.rawValue
+        self.imageSourceSelection = UserDefaults.standard.string(forKey: "imageSource") ?? BuiltInSource.dailywall.rawValue
 
         super.init()
         DispatchQueue.main.async {
             self.setupMenuBar()
+            self.requestNotificationPermissionIfNeeded()
+            self.checkForUpdates(silentIfUpToDate: true)
+            self.startObservers()
+            if self.autoRefreshEnabled && self.needsDailyUpdate() { self.setWallpaper() }
             if self.autoRefreshEnabled { self.scheduleRefresh() }
         }
     }
-    
+
     private func setupMenuBar() {
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         self.statusItem = item
@@ -71,17 +90,6 @@ class MenuBarController: NSObject, ObservableObject {
         button.image = NSImage(named: "MenuBarIcon")
         button.image?.isTemplate = true
         updateMenuBar()
-    }
-
-    private func loadCustomSources() -> [CustomSource] {
-        if let data = UserDefaults.standard.data(forKey: "customSourcesV2"),
-           let decoded = try? JSONDecoder().decode([CustomSource].self, from: data) {
-            return decoded
-        }
-        if let legacy = UserDefaults.standard.stringArray(forKey: "customSources") {
-            return legacy.map { CustomSource(url: $0, label: "") }
-        }
-        return []
     }
 
     private func updateMenuBar() {
@@ -92,80 +100,27 @@ class MenuBarController: NSObject, ObservableObject {
         setItem.target = self
         menu.addItem(setItem)
 
-        menu.addItem(.separator())
-
-        let autoTitle = autoRefreshEnabled ? "✓ Auto Refresh" : "Auto Refresh"
-        let autoItem = NSMenuItem(title: autoTitle, action: #selector(toggleAutoRefresh), keyEquivalent: "")
+        let autoItem = NSMenuItem(
+            title: autoRefreshEnabled ? "✓ Auto Refresh" : "Auto Refresh",
+            action: #selector(toggleAutoRefresh),
+            keyEquivalent: ""
+        )
         autoItem.target = self
         menu.addItem(autoItem)
 
-        let timeSubmenu = NSMenu()
-        let hours = (0..<24).map { String(format: "%02d:00", $0) }
-        for time in hours {
-            let t = NSMenuItem(title: time, action: #selector(setRefreshTime(_:)), keyEquivalent: "")
-            t.target = self
-            t.state = (!everyHourEnabled && time == refreshTime) ? .on : .off
-            timeSubmenu.addItem(t)
-        }
-        timeSubmenu.addItem(.separator())
-        let everyHourTitle = everyHourEnabled ? "✓ Every Hour" : "Every Hour"
-        let everyHourItem = NSMenuItem(title: everyHourTitle, action: #selector(toggleEveryHour), keyEquivalent: "")
-        everyHourItem.target = self
-        timeSubmenu.addItem(everyHourItem)
-
-        let timeItem = NSMenuItem(title: "Refresh Time", action: nil, keyEquivalent: "")
-        timeItem.submenu = timeSubmenu
-        menu.addItem(timeItem)
-
-        let sourceSubmenu = NSMenu()
-
-        for source in BuiltInSource.allCases {
-            let item = NSMenuItem(title: source.rawValue, action: #selector(setImageSource(_:)), keyEquivalent: "")
-            item.target = self
-            item.representedObject = source.rawValue
-            item.state = (source.rawValue == imageSourceSelection) ? .on : .off
-            sourceSubmenu.addItem(item)
-        }
-
-        let customs = loadCustomSources()
-        if !customs.isEmpty {
-            sourceSubmenu.addItem(.separator())
-            for custom in customs {
-                let item = NSMenuItem(title: custom.displayName, action: #selector(setImageSource(_:)), keyEquivalent: "")
-                item.target = self
-                item.representedObject = custom.url
-                item.state = (custom.url == imageSourceSelection) ? .on : .off
-                if KeychainHelper.load(for: custom.url) != nil {
-                    item.title = "\(custom.displayName) 🔑"
-                }
-                sourceSubmenu.addItem(item)
-            }
-        }
-
-        let sourceItem = NSMenuItem(title: "Image Source", action: nil, keyEquivalent: "")
-        sourceItem.submenu = sourceSubmenu
-        menu.addItem(sourceItem)
-
         menu.addItem(.separator())
 
-        let lastUpdateTitle: String
-        if let last = lastUpdateTime {
-            let f = DateFormatter(); f.dateStyle = .short; f.timeStyle = .short
-            lastUpdateTitle = "Last Update: \(f.string(from: last))"
-        } else {
-            lastUpdateTitle = "Last Update: Never"
-        }
-        let lastItem = NSMenuItem(title: lastUpdateTitle, action: nil, keyEquivalent: "")
+        let lastItem = NSMenuItem(title: lastUpdateLabel, action: nil, keyEquivalent: "")
         lastItem.isEnabled = false
         menu.addItem(lastItem)
 
         menu.addItem(.separator())
 
-        let settingsItem = NSMenuItem(title: "Settings", action: #selector(openSettings), keyEquivalent: "s")
+        let settingsItem = NSMenuItem(title: "Settings…", action: #selector(openSettings), keyEquivalent: ",")
         settingsItem.target = self
         menu.addItem(settingsItem)
 
-        let updatesItem = NSMenuItem(title: "Check for Updates", action: #selector(checkForUpdates), keyEquivalent: "")
+        let updatesItem = NSMenuItem(title: "Check for Updates", action: #selector(checkForUpdatesTapped), keyEquivalent: "")
         updatesItem.target = self
         updatesItem.image = NSImage(systemSymbolName: "arrow.clockwise.circle", accessibilityDescription: nil)
         menu.addItem(updatesItem)
@@ -183,44 +138,157 @@ class MenuBarController: NSObject, ObservableObject {
 
         statusItem.menu = menu
     }
-    
-    @objc private func toggleAutoRefresh() { autoRefreshEnabled.toggle() }
-    @objc private func setRefreshTime(_ sender: NSMenuItem) { everyHourEnabled = false; refreshTime = sender.title }
-    @objc private func toggleEveryHour() { everyHourEnabled.toggle() }
 
-    @objc private func setImageSource(_ sender: NSMenuItem) {
-        guard let selected = sender.representedObject as? String else { return }
-        imageSourceSelection = selected
+    private var lastUpdateLabel: String {
+        guard let last = lastUpdateTime else { return "Last Update: Never" }
+        let f = DateFormatter(); f.dateStyle = .short; f.timeStyle = .short
+        return "Last Update: \(f.string(from: last))"
     }
 
-    @objc private func setWallpaper() {
+    @objc private func toggleAutoRefresh()     { autoRefreshEnabled.toggle() }
+    @objc private func quitApp()               { NSApp.terminate(nil) }
+    @objc private func openSettings()          { SettingsWindowController.shared.showWindow() }
+    @objc private func showAbout()             { AboutWindowController.shared.showWindow() }
+    @objc private func checkForUpdatesTapped() { checkForUpdates(silentIfUpToDate: false) }
+
+    @objc func setWallpaper() {
+        guard !isInExcludedHours() else { return }
         Task { @MainActor in
             do {
-                let source = sourceProvider.source(forSelectionKey: imageSourceSelection)
+                let currentSource = UserDefaults.standard.string(forKey: "imageSource")
+                    ?? BuiltInSource.dailywall.rawValue
+                let source = sourceProvider.source(forSelectionKey: currentSource)
                 guard let imageURL = try await source.fetchImageURL() else { return }
                 let localPath = try await wallpaperManager.downloadImage(from: imageURL)
-                try wallpaperManager.setDesktopWallpaper(to: localPath)
+                let fillMode  = nsWorkspaceFillMode(for: wallpaperFillMode)
+                try wallpaperManager.setDesktopWallpaper(to: localPath, fillMode: fillMode)
                 self.lastUpdateTime = Date()
-                updateMenuBar()
+                appendHistory(imageURL: imageURL.absoluteString, source: currentSource)
+                saveWallpaperToFolder(at: localPath)
+                sendUpdateNotificationIfEnabled()
             } catch {
                 print("Error setting wallpaper: \(error)")
             }
         }
     }
 
-    @objc private func quitApp() { NSApp.terminate(nil) }
-    @objc private func openSettings() { SettingsWindowController.shared.showWindow() }
+    private func startObservers() {
+        NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didWakeNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            guard let self else { return }
+            if self.refreshOnWake || (self.autoRefreshEnabled && self.needsDailyUpdate()) {
+                self.setWallpaper()
+            }
+            if self.autoRefreshEnabled { self.scheduleRefresh() }
+        }
+
+        NotificationCenter.default.addObserver(
+            forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            guard let self else { return }
+            if self.autoRefreshEnabled && self.needsDailyUpdate() { self.setWallpaper() }
+        }
+
+        let ud = UserDefaults.standard
+        defaultsObservers = [
+            ud.observe(\.imageSource, options: [.new]) { [weak self] _, change in
+                guard let self, let val = change.newValue as? String else { return }
+                Task { @MainActor in
+                    if self.imageSourceSelection != val { self.imageSourceSelection = val }
+                }
+            },
+            ud.observe(\.autoRefreshEnabled, options: [.new]) { [weak self] _, change in
+                guard let self, let val = change.newValue as? Bool else { return }
+                Task { @MainActor in
+                    if self.autoRefreshEnabled != val { self.autoRefreshEnabled = val }
+                }
+            },
+            ud.observe(\.everyHourEnabled, options: [.new]) { [weak self] _, change in
+                guard let self, let val = change.newValue as? Bool else { return }
+                Task { @MainActor in
+                    if self.everyHourEnabled != val { self.everyHourEnabled = val }
+                }
+            },
+            ud.observe(\.refreshTime, options: [.new]) { [weak self] _, change in
+                guard let self, let val = change.newValue as? String else { return }
+                Task { @MainActor in
+                    if self.refreshTime != val { self.refreshTime = val }
+                }
+            },
+        ]
+    }
+
+    private func isInExcludedHours() -> Bool {
+        guard excludeHoursEnabled else { return false }
+        let hour  = Calendar.current.component(.hour, from: Date())
+        let start = excludeHourStart
+        let end   = excludeHourEnd
+        return start <= end ? (hour >= start && hour < end) : (hour >= start || hour < end)
+    }
+
+    private func appendHistory(imageURL: String, source: String) {
+        let entry = WallpaperHistoryEntry(url: imageURL, setAt: Date(), source: source)
+        var history: [WallpaperHistoryEntry]
+        if let data = UserDefaults.standard.data(forKey: "wallpaperHistory"),
+           let decoded = try? JSONDecoder().decode([WallpaperHistoryEntry].self, from: data) {
+            history = decoded
+        } else {
+            history = []
+        }
+        history.append(entry)
+        if history.count > historyLimit { history = Array(history.suffix(historyLimit)) }
+        if let encoded = try? JSONEncoder().encode(history) {
+            UserDefaults.standard.set(encoded, forKey: "wallpaperHistory")
+        }
+    }
+
+    private func saveWallpaperToFolder(at localPath: String) {
+        guard saveToFolder, !saveFolder.isEmpty else { return }
+        let src      = URL(fileURLWithPath: localPath)
+        let folder   = URL(fileURLWithPath: saveFolder)
+        let f        = DateFormatter(); f.dateFormat = "yyyy-MM-dd_HH-mm-ss"
+        let dest     = folder.appendingPathComponent("dailywall_\(f.string(from: Date())).jpg")
+        try? FileManager.default.copyItem(at: src, to: dest)
+    }
+
+    private func requestNotificationPermissionIfNeeded() {
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert]) { _, _ in }
+    }
+
+    private func sendUpdateNotificationIfEnabled() {
+        guard notifyOnUpdate else { return }
+        let content       = UNMutableNotificationContent()
+        content.title     = "Wallpaper Updated"
+        content.body      = "Your wallpaper has been refreshed by DailyWall."
+        let request       = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
+        UNUserNotificationCenter.current().add(request)
+    }
+
+    private func nsWorkspaceFillMode(for label: String) -> NSImageScaling {
+        switch label {
+        case "Fit":     return .scaleProportionallyUpOrDown
+        case "Stretch": return .scaleAxesIndependently
+        case "Center":  return .scaleNone
+        default:        return .scaleProportionallyUpOrDown
+        }
+    }
+
+    private func needsDailyUpdate() -> Bool {
+        guard let last = lastUpdateTime else { return true }
+        return !Calendar.current.isDateInToday(last)
+    }
 
     private func scheduleRefresh() {
         refreshTimer?.invalidate(); refreshTimer = nil
         let calendar = Calendar.current
-        let now = Date()
+        let now      = Date()
 
         if everyHourEnabled {
-            var comps = calendar.dateComponents([.year, .month, .day, .hour], from: now)
+            var comps    = calendar.dateComponents([.year, .month, .day, .hour], from: now)
             comps.minute = 0; comps.second = 0
             let startOfHour = calendar.date(from: comps) ?? now
-            var next = startOfHour
+            var next        = startOfHour
             if next <= now { next = calendar.date(byAdding: .hour, value: 1, to: startOfHour) ?? now.addingTimeInterval(3600) }
             refreshTimer = Timer.scheduledTimer(withTimeInterval: next.timeIntervalSinceNow, repeats: false) { [weak self] _ in
                 Task { @MainActor in self?.setWallpaper(); self?.scheduleRefresh() }
@@ -231,13 +299,16 @@ class MenuBarController: NSObject, ObservableObject {
         let parts = refreshTime.split(separator: ":").compactMap { Int($0) }
         guard parts.count == 2 else { return }
         var next = calendar.date(bySettingHour: parts[0], minute: parts[1], second: 0, of: now) ?? now
-        if next <= now { next = calendar.date(byAdding: .day, value: 1, to: next) ?? now.addingTimeInterval(86400) }
+        if next <= now {
+            if needsDailyUpdate() { Task { @MainActor in self.setWallpaper() } }
+            next = calendar.date(byAdding: .day, value: 1, to: next) ?? now.addingTimeInterval(86400)
+        }
         refreshTimer = Timer.scheduledTimer(withTimeInterval: next.timeIntervalSinceNow, repeats: false) { [weak self] _ in
             Task { @MainActor in self?.setWallpaper(); self?.scheduleRefresh() }
         }
     }
 
-    @objc private func checkForUpdates() {
+    @objc private func checkForUpdates(silentIfUpToDate: Bool = false) {
         Task { @MainActor in
             guard let apiURL = URL(string: "https://api.github.com/repos/mattkje/DailyWall/releases/latest") else { return }
             struct Release: Decodable { let tag_name: String; let html_url: String }
@@ -263,13 +334,13 @@ class MenuBarController: NSObject, ObservableObject {
                 let (data, response) = try await URLSession.shared.data(for: req)
                 if let http = response as? HTTPURLResponse, http.statusCode != 200 {
                     throw NSError(domain: "UpdateCheck", code: http.statusCode,
-                                  userInfo: [NSLocalizedDescriptionKey: "GitHub API returned status \(http.statusCode)"])
+                                  userInfo: [NSLocalizedDescriptionKey: "GitHub API returned \(http.statusCode)"])
                 }
                 let release = try JSONDecoder().decode(Release.self, from: data)
                 let latest  = normalize(release.tag_name)
                 let current = normalize(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.0.0")
-                let alert = NSAlert()
                 if isNewer(latest, than: current) {
+                    let alert = NSAlert()
                     alert.messageText     = "Update Available"
                     alert.informativeText = "Version \(latest) is available. You are on \(current)."
                     alert.addButton(withTitle: "Open Release Page")
@@ -277,25 +348,31 @@ class MenuBarController: NSObject, ObservableObject {
                     if alert.runModal() == .alertFirstButtonReturn, let url = URL(string: release.html_url) {
                         NSWorkspace.shared.open(url)
                     }
-                } else {
+                } else if !silentIfUpToDate {
+                    let alert = NSAlert()
                     alert.messageText     = "You're Up to Date"
                     alert.informativeText = "You are running the latest version (\(current))."
                     alert.addButton(withTitle: "OK")
                     alert.runModal()
                 }
             } catch {
-                let alert = NSAlert()
-                alert.messageText     = "Update Check Failed"
-                alert.informativeText = "Could not check for updates.\n\(error.localizedDescription)"
-                alert.addButton(withTitle: "OK")
-                alert.runModal()
+                if !silentIfUpToDate {
+                    let alert = NSAlert()
+                    alert.messageText     = "Update Check Failed"
+                    alert.informativeText = error.localizedDescription
+                    alert.addButton(withTitle: "OK")
+                    alert.runModal()
+                }
             }
         }
     }
+}
 
-    @objc private func showAbout() {
-        AboutWindowController.shared.showWindow()
-    }
+extension UserDefaults {
+    @objc dynamic var imageSource: String        { string(forKey: "imageSource") ?? "" }
+    @objc dynamic var autoRefreshEnabled: Bool   { bool(forKey: "autoRefreshEnabled") }
+    @objc dynamic var everyHourEnabled: Bool     { bool(forKey: "everyHourEnabled") }
+    @objc dynamic var refreshTime: String        { string(forKey: "refreshTime") ?? "" }
 }
 
 protocol WallpaperSource {
@@ -303,14 +380,13 @@ protocol WallpaperSource {
 }
 
 struct WallpaperSourceProvider {
-    /// `selectionKey` is the rawValue for built-ins, or the URL string for custom sources.
     func source(forSelectionKey key: String) -> WallpaperSource {
         switch MenuBarController.BuiltInSource(rawValue: key) {
         case .dailywall: return DailyWallSource()
-        case .bing:   return BingSource()
-        case .picsum: return PicsumSource()
-        case .pexels: return PexelsSource()
-        case nil:     return CustomURLSource(urlString: key)
+        case .bing:      return BingSource()
+        case .picsum:    return PicsumSource()
+        case .pexels:    return PexelsSource()
+        case nil:        return CustomURLSource(urlString: key)
         }
     }
 }
@@ -338,18 +414,16 @@ struct DailyWallSource: WallpaperSource {
         if let plist = Bundle.main.object(forInfoDictionaryKey: "DailyWallAPIKey") as? String, !plist.isEmpty { return plist }
         return nil
     }
-    
+
     func fetchImageURL() async throws -> URL? {
         guard let apiKey = apiKey() else { return nil }
-        var comps = URLComponents(string: "https://dailywall.mattikjellstadli.com/api/daily-wall")!
+        let comps = URLComponents(string: "https://dailywall.mattikjellstadli.com/api/daily-wall")!
         var request = URLRequest(url: comps.url!)
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse, http.statusCode == 200 else { return nil }
         if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-           let str = json["url"] as? String {
-            return URL(string: str)
-        }
+           let str = json["url"] as? String { return URL(string: str) }
         return nil
     }
 }
@@ -363,8 +437,8 @@ struct PexelsSource: WallpaperSource {
 
     func fetchImageURL() async throws -> URL? {
         guard let apiKey = apiKey() else { return nil }
-        let queries = ["landscape nature","mountains","ocean","forest","minimal landscape",
-                       "abstract gradient","night sky","desert","snow landscape"]
+        let queries = ["landscape nature", "mountains", "ocean", "forest", "minimal landscape",
+                       "abstract gradient", "night sky", "desert", "snow landscape"]
         var comps = URLComponents(string: "https://api.pexels.com/v1/search")!
         comps.queryItems = [
             URLQueryItem(name: "query",       value: queries.randomElement() ?? "landscape"),
@@ -394,51 +468,30 @@ struct CustomURLSource: WallpaperSource {
 
     func fetchImageURL() async throws -> URL? {
         guard let endpointURL = URL(string: urlString) else { return nil }
-
         var request = URLRequest(url: endpointURL)
-
-        // Attach API key from Keychain if one is saved for this URL
         if let key = KeychainHelper.load(for: urlString), !key.isEmpty {
             request.setValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
         }
-
-        // Try fetching as JSON first; fall back to treating the URL as a direct image link
         let (data, response) = try await URLSession.shared.data(for: request)
-
         if let http = response as? HTTPURLResponse,
            let contentType = http.value(forHTTPHeaderField: "Content-Type") {
-
-            // Direct image response — URL itself is the image
-            if contentType.hasPrefix("image/") {
-                return endpointURL
-            }
-
-            // JSON response — extract "url" field
-            if contentType.contains("json") {
-                if let url = extractImageURL(from: data) { return url }
-            }
+            if contentType.hasPrefix("image/") { return endpointURL }
+            if contentType.contains("json"), let url = extractImageURL(from: data) { return url }
         }
-
-        // Last resort: attempt JSON parse regardless of content-type
         if let url = extractImageURL(from: data) { return url }
-
-        // Fall back to the raw URL (e.g. direct redirect endpoint)
         return endpointURL
     }
 
-    /// Handles both `{"url":"..."}` objects and `[{"url":"..."}]` arrays.
     private func extractImageURL(from data: Data) -> URL? {
         guard let json = try? JSONSerialization.jsonObject(with: data) else { return nil }
-
         func urlFrom(_ dict: [String: Any]) -> URL? {
-            if let str = dict["url"] as? String { return URL(string: str) }
+            if let str = dict["url"]      as? String { return URL(string: str) }
             if let str = dict["imageUrl"] as? String { return URL(string: str) }
-            if let str = dict["image"] as? String { return URL(string: str) }
+            if let str = dict["image"]    as? String { return URL(string: str) }
             return nil
         }
-
-        if let dict = json as? [String: Any] { return urlFrom(dict) }
-        if let arr = json as? [[String: Any]], let first = arr.first { return urlFrom(first) }
+        if let dict = json as? [String: Any]                        { return urlFrom(dict) }
+        if let arr  = json as? [[String: Any]], let first = arr.first { return urlFrom(first) }
         return nil
     }
 }

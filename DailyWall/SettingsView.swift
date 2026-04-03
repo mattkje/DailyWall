@@ -10,7 +10,6 @@ struct CustomSource: Codable, Identifiable, Equatable {
     var url: String
     var label: String
 
-    /// Display name: label if non-empty, otherwise the bare hostname.
     var displayName: String {
         let trimmed = label.trimmingCharacters(in: .whitespacesAndNewlines)
         if !trimmed.isEmpty { return trimmed }
@@ -65,16 +64,50 @@ public enum KeychainHelper {
     }
 }
 
+// MARK: - Wallpaper History Entry
+
+struct WallpaperHistoryEntry: Codable, Identifiable, Equatable {
+    var id: UUID
+    var url: String
+    var setAt: Date
+    var source: String
+
+    init(url: String, setAt: Date, source: String) {
+        self.id     = UUID()
+        self.url    = url
+        self.setAt  = setAt
+        self.source = source
+    }
+}
+
 // MARK: - Settings Model
 
 @MainActor
 final class SettingsModel: ObservableObject {
-    @Published var autoRefreshEnabled: Bool { didSet { UserDefaults.standard.set(autoRefreshEnabled, forKey: "autoRefreshEnabled") } }
-    @Published var refreshTime: String      { didSet { UserDefaults.standard.set(refreshTime, forKey: "refreshTime") } }
-    @Published var everyHourEnabled: Bool   { didSet { UserDefaults.standard.set(everyHourEnabled, forKey: "everyHourEnabled") } }
-    @Published var imageSource: String      { didSet { UserDefaults.standard.set(imageSource, forKey: "imageSource") } }
-    @Published var openAtLogin: Bool        { didSet { UserDefaults.standard.set(openAtLogin, forKey: "openAtLogin") } }
-    @Published var lastUpdateTime: Date?    { didSet { if let d = lastUpdateTime { UserDefaults.standard.set(d, forKey: "lastUpdateTime") } else { UserDefaults.standard.removeObject(forKey: "lastUpdateTime") } } }
+    @Published var autoRefreshEnabled: Bool       { didSet { UserDefaults.standard.set(autoRefreshEnabled,       forKey: "autoRefreshEnabled") } }
+    @Published var refreshTime: String             { didSet { UserDefaults.standard.set(refreshTime,             forKey: "refreshTime") } }
+    @Published var everyHourEnabled: Bool          { didSet { UserDefaults.standard.set(everyHourEnabled,        forKey: "everyHourEnabled") } }
+    @Published var manualRefreshTimeEnabled: Bool  { didSet { UserDefaults.standard.set(manualRefreshTimeEnabled,forKey: "manualRefreshTimeEnabled") } }
+    @Published var imageSource: String             { didSet { UserDefaults.standard.set(imageSource,             forKey: "imageSource") } }
+    @Published var openAtLogin: Bool               { didSet { UserDefaults.standard.set(openAtLogin,             forKey: "openAtLogin") } }
+    @Published var refreshOnWake: Bool             { didSet { UserDefaults.standard.set(refreshOnWake,           forKey: "refreshOnWake") } }
+    @Published var notifyOnUpdate: Bool            { didSet { UserDefaults.standard.set(notifyOnUpdate,          forKey: "notifyOnUpdate") } }
+    @Published var saveToFolder: Bool              { didSet { UserDefaults.standard.set(saveToFolder,            forKey: "saveToFolder") } }
+    @Published var saveFolder: String              { didSet { UserDefaults.standard.set(saveFolder,              forKey: "saveFolder") } }
+    @Published var excludeHoursEnabled: Bool       { didSet { UserDefaults.standard.set(excludeHoursEnabled,     forKey: "excludeHoursEnabled") } }
+    @Published var excludeHourStart: Int           { didSet { UserDefaults.standard.set(excludeHourStart,        forKey: "excludeHourStart") } }
+    @Published var excludeHourEnd: Int             { didSet { UserDefaults.standard.set(excludeHourEnd,          forKey: "excludeHourEnd") } }
+    @Published var wallpaperFillMode: String       { didSet { UserDefaults.standard.set(wallpaperFillMode,       forKey: "wallpaperFillMode") } }
+    @Published var historyLimit: Int               { didSet { UserDefaults.standard.set(historyLimit,            forKey: "historyLimit") } }
+    @Published var lastUpdateTime: Date?           { didSet { if let d = lastUpdateTime { UserDefaults.standard.set(d, forKey: "lastUpdateTime") } else { UserDefaults.standard.removeObject(forKey: "lastUpdateTime") } } }
+
+    @Published var wallpaperHistory: [WallpaperHistoryEntry] {
+        didSet {
+            if let encoded = try? JSONEncoder().encode(wallpaperHistory) {
+                UserDefaults.standard.set(encoded, forKey: "wallpaperHistory")
+            }
+        }
+    }
 
     @Published var customSources: [CustomSource] {
         didSet {
@@ -85,14 +118,30 @@ final class SettingsModel: ObservableObject {
     }
 
     init() {
-        self.autoRefreshEnabled = UserDefaults.standard.bool(forKey: "autoRefreshEnabled")
-        self.refreshTime        = UserDefaults.standard.string(forKey: "refreshTime") ?? "08:00"
-        self.everyHourEnabled   = UserDefaults.standard.bool(forKey: "everyHourEnabled")
-        self.imageSource        = UserDefaults.standard.string(forKey: "imageSource") ?? "Bing (Only 1080p)"
-        self.openAtLogin        = UserDefaults.standard.bool(forKey: "openAtLogin")
-        self.lastUpdateTime     = UserDefaults.standard.object(forKey: "lastUpdateTime") as? Date
+        self.autoRefreshEnabled       = UserDefaults.standard.bool(forKey: "autoRefreshEnabled")
+        self.refreshTime              = UserDefaults.standard.string(forKey: "refreshTime") ?? "08:00"
+        self.everyHourEnabled         = UserDefaults.standard.bool(forKey: "everyHourEnabled")
+        self.manualRefreshTimeEnabled = UserDefaults.standard.bool(forKey: "manualRefreshTimeEnabled")
+        self.imageSource              = UserDefaults.standard.string(forKey: "imageSource") ?? "Bing (Only 1080p)"
+        self.openAtLogin              = UserDefaults.standard.bool(forKey: "openAtLogin")
+        self.refreshOnWake            = UserDefaults.standard.bool(forKey: "refreshOnWake")
+        self.notifyOnUpdate           = UserDefaults.standard.bool(forKey: "notifyOnUpdate")
+        self.saveToFolder             = UserDefaults.standard.bool(forKey: "saveToFolder")
+        self.saveFolder               = UserDefaults.standard.string(forKey: "saveFolder") ?? ""
+        self.excludeHoursEnabled      = UserDefaults.standard.bool(forKey: "excludeHoursEnabled")
+        self.excludeHourStart         = UserDefaults.standard.object(forKey: "excludeHourStart") as? Int ?? 22
+        self.excludeHourEnd           = UserDefaults.standard.object(forKey: "excludeHourEnd")   as? Int ?? 7
+        self.wallpaperFillMode        = UserDefaults.standard.string(forKey: "wallpaperFillMode") ?? "Fill"
+        self.historyLimit             = UserDefaults.standard.object(forKey: "historyLimit") as? Int ?? 20
+        self.lastUpdateTime           = UserDefaults.standard.object(forKey: "lastUpdateTime") as? Date
 
-        // Load V2 (CustomSource array), or migrate from legacy plain-string array
+        if let data = UserDefaults.standard.data(forKey: "wallpaperHistory"),
+           let decoded = try? JSONDecoder().decode([WallpaperHistoryEntry].self, from: data) {
+            self.wallpaperHistory = decoded
+        } else {
+            self.wallpaperHistory = []
+        }
+
         if let data = UserDefaults.standard.data(forKey: "customSourcesV2"),
            let decoded = try? JSONDecoder().decode([CustomSource].self, from: data) {
             self.customSources = decoded
@@ -100,6 +149,28 @@ final class SettingsModel: ObservableObject {
             self.customSources = legacy.map { CustomSource(url: $0, label: "") }
         } else {
             self.customSources = []
+        }
+    }
+}
+
+// MARK: - Sidebar Item
+
+private enum SidebarItem: String, CaseIterable, Identifiable {
+    case general  = "General"
+    case images   = "Images"
+    case history  = "History"
+    case apis     = "APIs"
+    case advanced = "Advanced"
+
+    var id: String { rawValue }
+
+    var icon: String {
+        switch self {
+        case .general:  return "gearshape.fill"
+        case .images:   return "photo.stack.fill"
+        case .history:  return "clock.arrow.circlepath"
+        case .apis:     return "link.badge.plus"
+        case .advanced: return "wrench.and.screwdriver.fill"
         }
     }
 }
@@ -175,14 +246,12 @@ private struct SourceRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // --- Main row ---
             HStack {
                 Image(systemName: "externaldrive.connected.to.line.below")
                     .foregroundColor(.secondary)
                     .frame(width: 20)
 
                 VStack(alignment: .leading, spacing: 1) {
-                    // Editable label (shown as placeholder text when empty)
                     TextField("Label (optional)", text: $source.label)
                         .font(.body)
                         .textFieldStyle(.plain)
@@ -211,9 +280,7 @@ private struct SourceRow: View {
                 Button {
                     withAnimation(.easeInOut(duration: 0.2)) {
                         isExpanded.toggle()
-                        if isExpanded {
-                            apiKey = KeychainHelper.load(for: source.url) ?? ""
-                        }
+                        if isExpanded { apiKey = KeychainHelper.load(for: source.url) ?? "" }
                     }
                 } label: {
                     Image(systemName: isExpanded ? "chevron.up" : "key")
@@ -229,7 +296,6 @@ private struct SourceRow: View {
             }
             .padding(.vertical, 2)
 
-            // --- Expandable key editor ---
             if isExpanded {
                 Divider().padding(.top, 4)
                 HStack(spacing: 8) {
@@ -294,12 +360,42 @@ private struct SourceRow: View {
     }
 }
 
+// MARK: - History Row
+
+private struct HistoryRow: View {
+    let entry: WallpaperHistoryEntry
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "photo")
+                .foregroundColor(.secondary)
+                .frame(width: 20)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(entry.source)
+                    .font(.body)
+            }
+            Spacer()
+            Text(DateFormatter.localizedString(from: entry.setAt, dateStyle: .short, timeStyle: .short))
+                .font(.caption)
+                .foregroundColor(.secondary)
+            Button {
+                if let url = URL(string: entry.url) { NSWorkspace.shared.open(url) }
+            } label: {
+                Image(systemName: "arrow.up.right.square")
+            }
+            .buttonStyle(.borderless)
+            .help("Open image URL")
+        }
+        .padding(.vertical, 2)
+    }
+}
+
 // MARK: - Settings View
 
 public struct SettingsView: View {
     @StateObject private var model = SettingsModel()
+    @State private var selection: SidebarItem = .general
 
-    // New-source form state
     @State private var newURL: String = ""
     @State private var newLabel: String = ""
     @State private var newAPIKey: String = ""
@@ -307,27 +403,42 @@ public struct SettingsView: View {
     @State private var isNewKeyVisible: Bool = false
     @State private var showingAPIInfo: Bool = false
 
-    private let times = (0..<24).map { String(format: "%02d:00", $0) }
-    private let builtInSources = ["DailyWall","Bing (Only 1080p)", "Picsum", "Pexels"]
+    private let times       = (0..<24).map { String(format: "%02d:00", $0) }
+    private let hours       = Array(0..<24)
+    private let fillModes   = ["Fill", "Fit", "Stretch", "Center", "Tile"]
+    private let historyLimits = [10, 20, 50, 100]
+    private let builtInSources = ["DailyWall", "Bing (Only 1080p)", "Picsum", "Pexels"]
+
+    private var hourlySupportedForCurrentSource: Bool {
+        let src = model.imageSource
+        return !(src == "DailyWall" || src == "Bing (Only 1080p)")
+    }
 
     public init() {}
 
     public var body: some View {
-        TabView {
-            generalTab
-                .tabItem { Label("General", systemImage: "gearshape.2.fill") }
-                .tag(0)
-            apiTab
-                .tabItem { Label("APIs", systemImage: "link.badge.plus") }
-                .tag(1)
-            advancedTab
-                .tabItem { Label("Advanced", systemImage: "wrench.and.screwdriver.fill") }
-                .tag(2)
+        NavigationSplitView {
+            List(SidebarItem.allCases, selection: $selection) { item in
+                Label(item.rawValue, systemImage: item.icon)
+                    .tag(item)
+            }
+            .navigationSplitViewColumnWidth(160)
+        } detail: {
+            Group {
+                switch selection {
+                case .general:  generalPane
+                case .images:   imagesPane
+                case .history:  historyPane
+                case .apis:     apisPane
+                case .advanced: advancedPane
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
-        .padding(.top, 4)
+        .frame(width: 760, height: 520)
     }
 
-    private var generalTab: some View {
+    private var generalPane: some View {
         Form {
             Section {
                 HStack {
@@ -345,15 +456,22 @@ public struct SettingsView: View {
 
             Section {
                 Toggle(isOn: $model.autoRefreshEnabled) {
-                    Label("Auto Refresh", systemImage: "arrow.clockwise.circle")
+                    Label("Auto Refresh (Every Day)", systemImage: "arrow.clockwise.circle")
                 }
                 Toggle(isOn: $model.everyHourEnabled) {
                     Label("Refresh Every Hour", systemImage: "clock.arrow.circlepath")
+                        .foregroundColor((!model.autoRefreshEnabled || !hourlySupportedForCurrentSource) ? .secondary : .primary)
                 }
-                .disabled(!model.autoRefreshEnabled)
+                .disabled(!model.autoRefreshEnabled || !hourlySupportedForCurrentSource)
+
+                Toggle(isOn: $model.manualRefreshTimeEnabled) {
+                    Label("Manual Refresh Time", systemImage: "clock.badge")
+                        .foregroundColor((!model.autoRefreshEnabled || model.everyHourEnabled) ? .secondary : .primary)
+                }
+                .disabled(!model.autoRefreshEnabled || model.everyHourEnabled)
 
                 HStack {
-                    Label("Daily Refresh Time", systemImage: "clock")
+                    Label("Preferred Daily Time", systemImage: "clock")
                         .foregroundColor(canPickTime ? .primary : .secondary)
                     Spacer()
                     Picker("", selection: $model.refreshTime) {
@@ -363,17 +481,78 @@ public struct SettingsView: View {
                     .frame(width: 90)
                     .disabled(!canPickTime)
                 }
+
                 if !model.autoRefreshEnabled {
-                    Text("Enable Auto Refresh to configure a schedule.")
+                    Text("Enable Auto Refresh to refresh once per day.")
+                        .font(.caption).foregroundColor(.secondary)
+                } else if !hourlySupportedForCurrentSource {
+                    Text("Hourly refresh is not available for this source. DailyWall and Bing only change once per day.")
                         .font(.caption).foregroundColor(.secondary)
                 } else if model.everyHourEnabled {
-                    Text("Hourly refresh is active. The daily time picker is disabled.")
+                    Text("Hourly override is active. The preferred daily time will be ignored.")
+                        .font(.caption).foregroundColor(.secondary)
+                } else if !model.manualRefreshTimeEnabled {
+                    Text("Daily is the default. Enable Manual Refresh Time to pick a preferred hour.")
+                        .font(.caption).foregroundColor(.secondary)
+                } else {
+                    Text("If the Mac was asleep at the preferred time, DailyWall will catch up when it wakes.")
                         .font(.caption).foregroundColor(.secondary)
                 }
             } header: {
                 Label("Refresh Schedule", systemImage: "timer")
             }
 
+            Section {
+                Toggle(isOn: $model.refreshOnWake) {
+                    Label("Refresh on Wake", systemImage: "sunrise.fill")
+                }
+                Toggle(isOn: $model.excludeHoursEnabled) {
+                    Label("Exclude Hours", systemImage: "moon.zzz.fill")
+                }
+                if model.excludeHoursEnabled {
+                    HStack {
+                        Label("From", systemImage: "clock")
+                            .foregroundColor(.secondary)
+                        Spacer()
+                        Picker("", selection: $model.excludeHourStart) {
+                            ForEach(hours, id: \.self) { Text(String(format: "%02d:00", $0)).tag($0) }
+                        }
+                        .labelsHidden()
+                        .frame(width: 90)
+                        Text("to")
+                            .foregroundColor(.secondary)
+                        Picker("", selection: $model.excludeHourEnd) {
+                            ForEach(hours, id: \.self) { Text(String(format: "%02d:00", $0)).tag($0) }
+                        }
+                        .labelsHidden()
+                        .frame(width: 90)
+                    }
+                    Text("Wallpaper will not be refreshed during these hours.")
+                        .font(.caption).foregroundColor(.secondary)
+                }
+            } header: {
+                Label("Behavior", systemImage: "wand.and.stars")
+            } footer: {
+                Text("Refresh on Wake triggers a new wallpaper whenever the Mac wakes from sleep.")
+                    .font(.caption)
+            }
+
+            Section {
+                Toggle(isOn: $model.notifyOnUpdate) {
+                    Label("Notify on Wallpaper Change", systemImage: "bell.badge.fill")
+                }
+            } header: {
+                Label("Notifications", systemImage: "bell.fill")
+            } footer: {
+                Text("Shows a macOS notification each time the wallpaper is updated.")
+                    .font(.caption)
+            }
+        }
+        .formStyle(.grouped)
+    }
+
+    private var imagesPane: some View {
+        Form {
             Section {
                 HStack {
                     Label("Source", systemImage: "photo.on.rectangle")
@@ -394,15 +573,116 @@ public struct SettingsView: View {
                     .frame(width: 180)
                 }
             } header: {
-                Label("Images", systemImage: "photo.stack")
+                Label("Wallpaper Source", systemImage: "photo.stack.fill")
+            } footer: {
+                Text("Built-in sources are maintained by DailyWall. Custom sources can be added in the APIs section.")
+                    .font(.caption)
+            }
+
+            Section {
+                HStack {
+                    Label("Fill Mode", systemImage: "rectangle.arrowtriangle.2.outward")
+                    Spacer()
+                    Picker("", selection: $model.wallpaperFillMode) {
+                        ForEach(fillModes, id: \.self) { Text($0).tag($0) }
+                    }
+                    .labelsHidden()
+                    .frame(width: 120)
+                }
+            } header: {
+                Label("Display", systemImage: "display")
+            } footer: {
+                Text("Controls how the wallpaper image is scaled to fit your screen.")
+                    .font(.caption)
+            }
+
+            Section {
+                Toggle(isOn: $model.saveToFolder) {
+                    Label("Save Wallpapers to Folder", systemImage: "folder.badge.plus")
+                }
+                if model.saveToFolder {
+                    HStack {
+                        Label(
+                            model.saveFolder.isEmpty ? "No folder selected" : model.saveFolder,
+                            systemImage: "folder"
+                        )
+                        .foregroundColor(model.saveFolder.isEmpty ? .secondary : .primary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                        Spacer()
+                        Button("Choose…") { chooseSaveFolder() }
+                    }
+                    if model.saveFolder.isEmpty {
+                        Text("Choose a folder where each wallpaper will be saved automatically.")
+                            .font(.caption).foregroundColor(.secondary)
+                    }
+                }
+            } header: {
+                Label("Storage", systemImage: "externaldrive.fill")
+            } footer: {
+                Text("Each new wallpaper is saved as a JPEG in the chosen folder.")
+                    .font(.caption)
             }
         }
         .formStyle(.grouped)
     }
 
-    private var canPickTime: Bool { model.autoRefreshEnabled && !model.everyHourEnabled }
+    private var historyPane: some View {
+        Form {
+            Section {
+                HStack {
+                    Label("Keep Last", systemImage: "clock.arrow.circlepath")
+                    Spacer()
+                    Picker("", selection: $model.historyLimit) {
+                        ForEach(historyLimits, id: \.self) { Text("\($0) wallpapers").tag($0) }
+                    }
+                    .labelsHidden()
+                    .frame(width: 140)
+                }
+            } header: {
+                Label("History Settings", systemImage: "gearshape")
+            }
 
-    private var apiTab: some View {
+            if model.wallpaperHistory.isEmpty {
+                Section {
+                    HStack {
+                        Spacer()
+                        VStack(spacing: 6) {
+                            Image(systemName: "clock.badge.xmark")
+                                .font(.largeTitle)
+                                .foregroundColor(.secondary)
+                            Text("No wallpaper history yet.")
+                                .font(.caption).foregroundColor(.secondary)
+                        }
+                        Spacer()
+                    }
+                    .padding(.vertical, 8)
+                }
+            } else {
+                Section {
+                    ForEach(model.wallpaperHistory.reversed()) { entry in
+                        HistoryRow(entry: entry)
+                    }
+                } header: {
+                    HStack {
+                        Text("Recent Wallpapers (\(model.wallpaperHistory.count))")
+                        Spacer()
+                        Button(role: .destructive) {
+                            model.wallpaperHistory.removeAll()
+                        } label: {
+                            Label("Clear All", systemImage: "trash")
+                                .font(.caption)
+                        }
+                        .buttonStyle(.borderless)
+                        .foregroundColor(.red)
+                    }
+                }
+            }
+        }
+        .formStyle(.grouped)
+    }
+
+    private var apisPane: some View {
         Form {
             Section {
                 HStack(spacing: 10) {
@@ -526,8 +806,8 @@ public struct SettingsView: View {
         }
         .formStyle(.grouped)
     }
-    
-    private var advancedTab: some View {
+
+    private var advancedPane: some View {
         Form {
             Section {
                 Toggle(isOn: $model.openAtLogin) {
@@ -553,22 +833,43 @@ public struct SettingsView: View {
                     Label("Clear Last Update Record", systemImage: "trash.circle.fill")
                 }
                 .disabled(model.lastUpdateTime == nil)
+
+                Button(role: .destructive) {
+                    model.wallpaperHistory.removeAll()
+                } label: {
+                    Label("Clear Wallpaper History", systemImage: "clock.badge.xmark")
+                }
+                .disabled(model.wallpaperHistory.isEmpty)
             } header: {
                 Label("History", systemImage: "clock.arrow.trianglehead.counterclockwise.rotate.90")
             } footer: {
-                Text("Clearing this record will cause the next refresh to treat the wallpaper as never having been set.")
+                Text("Clearing history removes all locally stored wallpaper URLs. This does not delete any saved image files.")
                     .font(.caption)
             }
         }
         .formStyle(.grouped)
     }
 
+    private var canPickTime: Bool {
+        model.autoRefreshEnabled && !model.everyHourEnabled && model.manualRefreshTimeEnabled
+    }
+
+    private func chooseSaveFolder() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles      = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.prompt = "Choose Folder"
+        if panel.runModal() == .OK {
+            model.saveFolder = panel.url?.path ?? ""
+        }
+    }
+
     private func addCustomSource() {
         let url = newURL.trimmingCharacters(in: .whitespacesAndNewlines)
         guard isValidURL(url) else { return }
         guard !model.customSources.contains(where: { $0.url == url }) else {
-            newURL = ""; newLabel = ""; newAPIKey = ""
-            return
+            newURL = ""; newLabel = ""; newAPIKey = ""; return
         }
         let label = newLabel.trimmingCharacters(in: .whitespacesAndNewlines)
         model.customSources.append(CustomSource(url: url, label: label))
@@ -648,7 +949,6 @@ public struct SettingsView: View {
     }
 
     private var currentVersionString: String {
-        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
-        return "\(version)"
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
     }
 }

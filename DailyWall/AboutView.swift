@@ -29,8 +29,6 @@ final class AboutWindowController: NSWindowController {
     }
 }
 
-// MARK: - About View
-
 private struct AboutView: View {
     @Environment(\.colorScheme) private var colorScheme
 

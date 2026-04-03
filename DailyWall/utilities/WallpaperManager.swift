@@ -1,10 +1,3 @@
-//
-//  WallpaperManager.swift
-//  DailyWall
-//
-//  Created by Matti Kjellstadli on 01/04/2026.
-//
-
 import Foundation
 import AppKit
 
@@ -17,10 +10,17 @@ final class WallpaperManager {
         return fileURL.path
     }
 
-    func setDesktopWallpaper(to path: String) throws {
+    func setDesktopWallpaper(to path: String, fillMode: NSImageScaling = .scaleProportionallyUpOrDown) throws {
         let url = URL(fileURLWithPath: path)
+        // .allowClipping: true + scaleProportionallyUpOrDown = "Fill" (scale to fill, crop edges)
+        // Without allowClipping it becomes "Fit" (letterbox).
+        let allowClipping = (fillMode == .scaleProportionallyUpOrDown)
+        let options: [NSWorkspace.DesktopImageOptionKey: Any] = [
+            .imageScaling:   fillMode.rawValue,
+            .allowClipping:  allowClipping
+        ]
         for screen in NSScreen.screens {
-            try NSWorkspace.shared.setDesktopImageURL(url, for: screen, options: [:])
+            try NSWorkspace.shared.setDesktopImageURL(url, for: screen, options: options)
         }
     }
 }
