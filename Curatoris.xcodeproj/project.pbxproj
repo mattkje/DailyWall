@@ -6,6 +6,45 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		104943A62F83F63F008E312F /* CuratorisApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 104943992F83F63F008E312F /* CuratorisApp.swift */; };
+		104943A72F83F63F008E312F /* Item.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1049439B2F83F63F008E312F /* Item.swift */; };
+		104943A82F83F63F008E312F /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1049439D2F83F63F008E312F /* SettingsView.swift */; };
+		104943AA2F83F63F008E312F /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 104943982F83F63F008E312F /* ContentView.swift */; };
+		104943AB2F83F63F008E312F /* MenuBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1049439C2F83F63F008E312F /* MenuBarController.swift */; };
+		104943AC2F83F63F008E312F /* SettingsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1049439E2F83F63F008E312F /* SettingsWindowController.swift */; };
+		104943AE2F83F63F008E312F /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 104943942F83F63F008E312F /* AboutView.swift */; };
+		104943AF2F83F63F008E312F /* WallpaperManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 104943922F83F63F008E312F /* WallpaperManager.swift */; };
+		104943B02F83F63F008E312F /* Config.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 104943972F83F63F008E312F /* Config.xcconfig */; };
+		104943B12F83F63F008E312F /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 1049439A2F83F63F008E312F /* Info.plist */; };
+		104943B22F83F63F008E312F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 104943962F83F63F008E312F /* Assets.xcassets */; };
+		104943B32F83F63F008E312F /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 104943952F83F63F008E312F /* AppIcon.icon */; };
+		104943B42F83F63F008E312F /* Config.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 104943972F83F63F008E312F /* Config.xcconfig */; };
+		104943B52F83F63F008E312F /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 1049439A2F83F63F008E312F /* Info.plist */; };
+		104943B62F83F63F008E312F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 104943962F83F63F008E312F /* Assets.xcassets */; };
+		104943B72F83F63F008E312F /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 104943952F83F63F008E312F /* AppIcon.icon */; };
+		104943B92F83F63F008E312F /* CuratorisApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 104943992F83F63F008E312F /* CuratorisApp.swift */; };
+		104943BA2F83F63F008E312F /* Item.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1049439B2F83F63F008E312F /* Item.swift */; };
+		104943BB2F83F63F008E312F /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1049439D2F83F63F008E312F /* SettingsView.swift */; };
+		104943BD2F83F63F008E312F /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 104943982F83F63F008E312F /* ContentView.swift */; };
+		104943BE2F83F63F008E312F /* MenuBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1049439C2F83F63F008E312F /* MenuBarController.swift */; };
+		104943BF2F83F63F008E312F /* SettingsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1049439E2F83F63F008E312F /* SettingsWindowController.swift */; };
+		104943C12F83F63F008E312F /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 104943942F83F63F008E312F /* AboutView.swift */; };
+		104943C22F83F63F008E312F /* WallpaperManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 104943922F83F63F008E312F /* WallpaperManager.swift */; };
+		104943C42F83F63F008E312F /* CuratorisApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 104943992F83F63F008E312F /* CuratorisApp.swift */; };
+		104943C52F83F63F008E312F /* Item.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1049439B2F83F63F008E312F /* Item.swift */; };
+		104943C62F83F63F008E312F /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1049439D2F83F63F008E312F /* SettingsView.swift */; };
+		104943C82F83F63F008E312F /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 104943982F83F63F008E312F /* ContentView.swift */; };
+		104943C92F83F63F008E312F /* MenuBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1049439C2F83F63F008E312F /* MenuBarController.swift */; };
+		104943CA2F83F63F008E312F /* SettingsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1049439E2F83F63F008E312F /* SettingsWindowController.swift */; };
+		104943CC2F83F63F008E312F /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 104943942F83F63F008E312F /* AboutView.swift */; };
+		104943CD2F83F63F008E312F /* WallpaperManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 104943922F83F63F008E312F /* WallpaperManager.swift */; };
+		104943CE2F83F63F008E312F /* Config.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 104943972F83F63F008E312F /* Config.xcconfig */; };
+		104943CF2F83F63F008E312F /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 1049439A2F83F63F008E312F /* Info.plist */; };
+		104943D02F83F63F008E312F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 104943962F83F63F008E312F /* Assets.xcassets */; };
+		104943D12F83F63F008E312F /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 104943952F83F63F008E312F /* AppIcon.icon */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		1017B5A02F5AA98B00BAFB1A /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -24,41 +63,25 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		1017B5902F5AA98A00BAFB1A /* DailyWall.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DailyWall.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		1017B59F2F5AA98B00BAFB1A /* DailyWallTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DailyWallTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		1017B5A92F5AA98B00BAFB1A /* DailyWallUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DailyWallUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		1017B5902F5AA98A00BAFB1A /* Curatoris.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Curatoris.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		1017B59F2F5AA98B00BAFB1A /* CuratorisTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CuratorisTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		1017B5A92F5AA98B00BAFB1A /* CuratorisUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CuratorisUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		104943922F83F63F008E312F /* WallpaperManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WallpaperManager.swift; sourceTree = "<group>"; };
+		104943942F83F63F008E312F /* AboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutView.swift; sourceTree = "<group>"; };
+		104943952F83F63F008E312F /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = AppIcon.icon; sourceTree = "<group>"; };
+		104943962F83F63F008E312F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		104943972F83F63F008E312F /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
+		104943982F83F63F008E312F /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		104943992F83F63F008E312F /* CuratorisApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CuratorisApp.swift; sourceTree = "<group>"; };
+		1049439A2F83F63F008E312F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		1049439B2F83F63F008E312F /* Item.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Item.swift; sourceTree = "<group>"; };
+		1049439C2F83F63F008E312F /* MenuBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarController.swift; sourceTree = "<group>"; };
+		1049439D2F83F63F008E312F /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		1049439E2F83F63F008E312F /* SettingsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsWindowController.swift; sourceTree = "<group>"; };
+		104943E02F83F695008E312F /* CuratorisTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CuratorisTests.swift; sourceTree = "<group>"; };
+		104943E22F83F695008E312F /* CuratorisUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CuratorisUITests.swift; sourceTree = "<group>"; };
+		104943E32F83F695008E312F /* CuratorisUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CuratorisUITestsLaunchTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
-
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		10CD19E52F795B8C00FD0B5E /* Exceptions for "DailyWall" folder in "DailyWall" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-			);
-			target = 1017B58F2F5AA98A00BAFB1A /* DailyWall */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-
-/* Begin PBXFileSystemSynchronizedRootGroup section */
-		1017B5922F5AA98A00BAFB1A /* DailyWall */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				10CD19E52F795B8C00FD0B5E /* Exceptions for "DailyWall" folder in "DailyWall" target */,
-			);
-			path = DailyWall;
-			sourceTree = "<group>";
-		};
-		1017B5A22F5AA98B00BAFB1A /* DailyWallTests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = DailyWallTests;
-			sourceTree = "<group>";
-		};
-		1017B5AC2F5AA98B00BAFB1A /* DailyWallUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = DailyWallUITests;
-			sourceTree = "<group>";
-		};
-/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		1017B58D2F5AA98A00BAFB1A /* Frameworks */ = {
@@ -88,9 +111,9 @@
 		1017B5872F5AA98A00BAFB1A = {
 			isa = PBXGroup;
 			children = (
-				1017B5922F5AA98A00BAFB1A /* DailyWall */,
-				1017B5A22F5AA98B00BAFB1A /* DailyWallTests */,
-				1017B5AC2F5AA98B00BAFB1A /* DailyWallUITests */,
+				1049439F2F83F63F008E312F /* Curatoris */,
+				104943E12F83F695008E312F /* CuratorisTests */,
+				104943E42F83F695008E312F /* CuratorisUITests */,
 				1017B5912F5AA98A00BAFB1A /* Products */,
 			);
 			sourceTree = "<group>";
@@ -98,19 +121,63 @@
 		1017B5912F5AA98A00BAFB1A /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				1017B5902F5AA98A00BAFB1A /* DailyWall.app */,
-				1017B59F2F5AA98B00BAFB1A /* DailyWallTests.xctest */,
-				1017B5A92F5AA98B00BAFB1A /* DailyWallUITests.xctest */,
+				1017B5902F5AA98A00BAFB1A /* Curatoris.app */,
+				1017B59F2F5AA98B00BAFB1A /* CuratorisTests.xctest */,
+				1017B5A92F5AA98B00BAFB1A /* CuratorisUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		104943932F83F63F008E312F /* utilities */ = {
+			isa = PBXGroup;
+			children = (
+				104943922F83F63F008E312F /* WallpaperManager.swift */,
+			);
+			path = utilities;
+			sourceTree = "<group>";
+		};
+		1049439F2F83F63F008E312F /* Curatoris */ = {
+			isa = PBXGroup;
+			children = (
+				104943932F83F63F008E312F /* utilities */,
+				104943942F83F63F008E312F /* AboutView.swift */,
+				104943952F83F63F008E312F /* AppIcon.icon */,
+				104943962F83F63F008E312F /* Assets.xcassets */,
+				104943972F83F63F008E312F /* Config.xcconfig */,
+				104943982F83F63F008E312F /* ContentView.swift */,
+				104943992F83F63F008E312F /* CuratorisApp.swift */,
+				1049439A2F83F63F008E312F /* Info.plist */,
+				1049439B2F83F63F008E312F /* Item.swift */,
+				1049439C2F83F63F008E312F /* MenuBarController.swift */,
+				1049439D2F83F63F008E312F /* SettingsView.swift */,
+				1049439E2F83F63F008E312F /* SettingsWindowController.swift */,
+			);
+			path = Curatoris;
+			sourceTree = "<group>";
+		};
+		104943E12F83F695008E312F /* CuratorisTests */ = {
+			isa = PBXGroup;
+			children = (
+				104943E02F83F695008E312F /* CuratorisTests.swift */,
+			);
+			path = CuratorisTests;
+			sourceTree = "<group>";
+		};
+		104943E42F83F695008E312F /* CuratorisUITests */ = {
+			isa = PBXGroup;
+			children = (
+				104943E22F83F695008E312F /* CuratorisUITests.swift */,
+				104943E32F83F695008E312F /* CuratorisUITestsLaunchTests.swift */,
+			);
+			path = CuratorisUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		1017B58F2F5AA98A00BAFB1A /* DailyWall */ = {
+		1017B58F2F5AA98A00BAFB1A /* Curatoris */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 1017B5B32F5AA98B00BAFB1A /* Build configuration list for PBXNativeTarget "DailyWall" */;
+			buildConfigurationList = 1017B5B32F5AA98B00BAFB1A /* Build configuration list for PBXNativeTarget "Curatoris" */;
 			buildPhases = (
 				1017B58C2F5AA98A00BAFB1A /* Sources */,
 				1017B58D2F5AA98A00BAFB1A /* Frameworks */,
@@ -120,19 +187,16 @@
 			);
 			dependencies = (
 			);
-			fileSystemSynchronizedGroups = (
-				1017B5922F5AA98A00BAFB1A /* DailyWall */,
-			);
-			name = DailyWall;
+			name = Curatoris;
 			packageProductDependencies = (
 			);
 			productName = DailyWall;
-			productReference = 1017B5902F5AA98A00BAFB1A /* DailyWall.app */;
+			productReference = 1017B5902F5AA98A00BAFB1A /* Curatoris.app */;
 			productType = "com.apple.product-type.application";
 		};
-		1017B59E2F5AA98B00BAFB1A /* DailyWallTests */ = {
+		1017B59E2F5AA98B00BAFB1A /* CuratorisTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 1017B5B62F5AA98B00BAFB1A /* Build configuration list for PBXNativeTarget "DailyWallTests" */;
+			buildConfigurationList = 1017B5B62F5AA98B00BAFB1A /* Build configuration list for PBXNativeTarget "CuratorisTests" */;
 			buildPhases = (
 				1017B59B2F5AA98B00BAFB1A /* Sources */,
 				1017B59C2F5AA98B00BAFB1A /* Frameworks */,
@@ -143,19 +207,16 @@
 			dependencies = (
 				1017B5A12F5AA98B00BAFB1A /* PBXTargetDependency */,
 			);
-			fileSystemSynchronizedGroups = (
-				1017B5A22F5AA98B00BAFB1A /* DailyWallTests */,
-			);
-			name = DailyWallTests;
+			name = CuratorisTests;
 			packageProductDependencies = (
 			);
 			productName = DailyWallTests;
-			productReference = 1017B59F2F5AA98B00BAFB1A /* DailyWallTests.xctest */;
+			productReference = 1017B59F2F5AA98B00BAFB1A /* CuratorisTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		1017B5A82F5AA98B00BAFB1A /* DailyWallUITests */ = {
+		1017B5A82F5AA98B00BAFB1A /* CuratorisUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 1017B5B92F5AA98B00BAFB1A /* Build configuration list for PBXNativeTarget "DailyWallUITests" */;
+			buildConfigurationList = 1017B5B92F5AA98B00BAFB1A /* Build configuration list for PBXNativeTarget "CuratorisUITests" */;
 			buildPhases = (
 				1017B5A52F5AA98B00BAFB1A /* Sources */,
 				1017B5A62F5AA98B00BAFB1A /* Frameworks */,
@@ -166,14 +227,11 @@
 			dependencies = (
 				1017B5AB2F5AA98B00BAFB1A /* PBXTargetDependency */,
 			);
-			fileSystemSynchronizedGroups = (
-				1017B5AC2F5AA98B00BAFB1A /* DailyWallUITests */,
-			);
-			name = DailyWallUITests;
+			name = CuratorisUITests;
 			packageProductDependencies = (
 			);
 			productName = DailyWallUITests;
-			productReference = 1017B5A92F5AA98B00BAFB1A /* DailyWallUITests.xctest */;
+			productReference = 1017B5A92F5AA98B00BAFB1A /* CuratorisUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
@@ -199,7 +257,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 1017B58B2F5AA98A00BAFB1A /* Build configuration list for PBXProject "DailyWall" */;
+			buildConfigurationList = 1017B58B2F5AA98A00BAFB1A /* Build configuration list for PBXProject "Curatoris" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -213,9 +271,9 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				1017B58F2F5AA98A00BAFB1A /* DailyWall */,
-				1017B59E2F5AA98B00BAFB1A /* DailyWallTests */,
-				1017B5A82F5AA98B00BAFB1A /* DailyWallUITests */,
+				1017B58F2F5AA98A00BAFB1A /* Curatoris */,
+				1017B59E2F5AA98B00BAFB1A /* CuratorisTests */,
+				1017B5A82F5AA98B00BAFB1A /* CuratorisUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -225,6 +283,10 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				104943CE2F83F63F008E312F /* Config.xcconfig in Resources */,
+				104943CF2F83F63F008E312F /* Info.plist in Resources */,
+				104943D02F83F63F008E312F /* Assets.xcassets in Resources */,
+				104943D12F83F63F008E312F /* AppIcon.icon in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -232,6 +294,10 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				104943B02F83F63F008E312F /* Config.xcconfig in Resources */,
+				104943B12F83F63F008E312F /* Info.plist in Resources */,
+				104943B22F83F63F008E312F /* Assets.xcassets in Resources */,
+				104943B32F83F63F008E312F /* AppIcon.icon in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -239,6 +305,10 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				104943B42F83F63F008E312F /* Config.xcconfig in Resources */,
+				104943B52F83F63F008E312F /* Info.plist in Resources */,
+				104943B62F83F63F008E312F /* Assets.xcassets in Resources */,
+				104943B72F83F63F008E312F /* AppIcon.icon in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -249,6 +319,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				104943C42F83F63F008E312F /* CuratorisApp.swift in Sources */,
+				104943C52F83F63F008E312F /* Item.swift in Sources */,
+				104943C62F83F63F008E312F /* SettingsView.swift in Sources */,
+				104943C82F83F63F008E312F /* ContentView.swift in Sources */,
+				104943C92F83F63F008E312F /* MenuBarController.swift in Sources */,
+				104943CA2F83F63F008E312F /* SettingsWindowController.swift in Sources */,
+				104943CC2F83F63F008E312F /* AboutView.swift in Sources */,
+				104943CD2F83F63F008E312F /* WallpaperManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -256,6 +334,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				104943A62F83F63F008E312F /* CuratorisApp.swift in Sources */,
+				104943A72F83F63F008E312F /* Item.swift in Sources */,
+				104943A82F83F63F008E312F /* SettingsView.swift in Sources */,
+				104943AA2F83F63F008E312F /* ContentView.swift in Sources */,
+				104943AB2F83F63F008E312F /* MenuBarController.swift in Sources */,
+				104943AC2F83F63F008E312F /* SettingsWindowController.swift in Sources */,
+				104943AE2F83F63F008E312F /* AboutView.swift in Sources */,
+				104943AF2F83F63F008E312F /* WallpaperManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -263,6 +349,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				104943B92F83F63F008E312F /* CuratorisApp.swift in Sources */,
+				104943BA2F83F63F008E312F /* Item.swift in Sources */,
+				104943BB2F83F63F008E312F /* SettingsView.swift in Sources */,
+				104943BD2F83F63F008E312F /* ContentView.swift in Sources */,
+				104943BE2F83F63F008E312F /* MenuBarController.swift in Sources */,
+				104943BF2F83F63F008E312F /* SettingsWindowController.swift in Sources */,
+				104943C12F83F63F008E312F /* AboutView.swift in Sources */,
+				104943C22F83F63F008E312F /* WallpaperManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -271,12 +365,12 @@
 /* Begin PBXTargetDependency section */
 		1017B5A12F5AA98B00BAFB1A /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 1017B58F2F5AA98A00BAFB1A /* DailyWall */;
+			target = 1017B58F2F5AA98A00BAFB1A /* Curatoris */;
 			targetProxy = 1017B5A02F5AA98B00BAFB1A /* PBXContainerItemProxy */;
 		};
 		1017B5AB2F5AA98B00BAFB1A /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 1017B58F2F5AA98A00BAFB1A /* DailyWall */;
+			target = 1017B58F2F5AA98A00BAFB1A /* Curatoris */;
 			targetProxy = 1017B5AA2F5AA98B00BAFB1A /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -404,8 +498,6 @@
 		};
 		1017B5B42F5AA98B00BAFB1A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReferenceAnchor = 1017B5922F5AA98A00BAFB1A /* DailyWall */;
-			baseConfigurationReferenceRelativePath = Config.xcconfig;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -420,16 +512,17 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = DailyWall/Info.plist;
+				INFOPLIST_FILE = Curatoris/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Curatoris;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "DailyWall needs to download wallpapers from the internet";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Curatoris needs to download wallpapers from the internet";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.4.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.mattkje.DailyWall;
+				MARKETING_VERSION = 1.5.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mattkje.Curatoris;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -443,8 +536,6 @@
 		};
 		1017B5B52F5AA98B00BAFB1A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReferenceAnchor = 1017B5922F5AA98A00BAFB1A /* DailyWall */;
-			baseConfigurationReferenceRelativePath = Config.xcconfig;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -459,16 +550,17 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = DailyWall/Info.plist;
+				INFOPLIST_FILE = Curatoris/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Curatoris;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "DailyWall needs to download wallpapers from the internet";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Curatoris needs to download wallpapers from the internet";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.4.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.mattkje.DailyWall;
+				MARKETING_VERSION = 1.5.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mattkje.Curatoris;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -563,7 +655,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		1017B58B2F5AA98A00BAFB1A /* Build configuration list for PBXProject "DailyWall" */ = {
+		1017B58B2F5AA98A00BAFB1A /* Build configuration list for PBXProject "Curatoris" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				1017B5B12F5AA98B00BAFB1A /* Debug */,
@@ -572,7 +664,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		1017B5B32F5AA98B00BAFB1A /* Build configuration list for PBXNativeTarget "DailyWall" */ = {
+		1017B5B32F5AA98B00BAFB1A /* Build configuration list for PBXNativeTarget "Curatoris" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				1017B5B42F5AA98B00BAFB1A /* Debug */,
@@ -581,7 +673,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		1017B5B62F5AA98B00BAFB1A /* Build configuration list for PBXNativeTarget "DailyWallTests" */ = {
+		1017B5B62F5AA98B00BAFB1A /* Build configuration list for PBXNativeTarget "CuratorisTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				1017B5B72F5AA98B00BAFB1A /* Debug */,
@@ -590,7 +682,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		1017B5B92F5AA98B00BAFB1A /* Build configuration list for PBXNativeTarget "DailyWallUITests" */ = {
+		1017B5B92F5AA98B00BAFB1A /* Build configuration list for PBXNativeTarget "CuratorisUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				1017B5BA2F5AA98B00BAFB1A /* Debug */,

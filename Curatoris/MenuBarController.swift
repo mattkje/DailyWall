@@ -7,7 +7,7 @@ import UserNotifications
 class MenuBarController: NSObject, ObservableObject {
 
     enum BuiltInSource: String, CaseIterable {
-        case dailywall = "DailyWall"
+        case curatoris = "Curatoris"
         case bing      = "Bing (Only 1080p)"
         case picsum    = "Picsum"
         case pexels    = "Pexels"
@@ -70,7 +70,7 @@ class MenuBarController: NSObject, ObservableObject {
         self.refreshTime          = UserDefaults.standard.string(forKey: "refreshTime") ?? "08:00"
         self.lastUpdateTime       = UserDefaults.standard.object(forKey: "lastUpdateTime") as? Date
         self.everyHourEnabled     = UserDefaults.standard.bool(forKey: "everyHourEnabled")
-        self.imageSourceSelection = UserDefaults.standard.string(forKey: "imageSource") ?? BuiltInSource.dailywall.rawValue
+        self.imageSourceSelection = UserDefaults.standard.string(forKey: "imageSource") ?? BuiltInSource.curatoris.rawValue
 
         super.init()
         DispatchQueue.main.async {
@@ -125,7 +125,7 @@ class MenuBarController: NSObject, ObservableObject {
         updatesItem.image = NSImage(systemSymbolName: "arrow.clockwise.circle", accessibilityDescription: nil)
         menu.addItem(updatesItem)
 
-        let aboutItem = NSMenuItem(title: "About DailyWall", action: #selector(showAbout), keyEquivalent: "")
+        let aboutItem = NSMenuItem(title: "About Curatoris", action: #selector(showAbout), keyEquivalent: "")
         aboutItem.target = self
         aboutItem.image = NSImage(systemSymbolName: "info.circle", accessibilityDescription: nil)
         menu.addItem(aboutItem)
@@ -156,7 +156,7 @@ class MenuBarController: NSObject, ObservableObject {
         Task { @MainActor in
             do {
                 let currentSource = UserDefaults.standard.string(forKey: "imageSource")
-                    ?? BuiltInSource.dailywall.rawValue
+                    ?? BuiltInSource.curatoris.rawValue
                 let source = sourceProvider.source(forSelectionKey: currentSource)
                 guard let imageURL = try await source.fetchImageURL() else { return }
                 let localPath = try await wallpaperManager.downloadImage(from: imageURL)
@@ -248,7 +248,7 @@ class MenuBarController: NSObject, ObservableObject {
         let src      = URL(fileURLWithPath: localPath)
         let folder   = URL(fileURLWithPath: saveFolder)
         let f        = DateFormatter(); f.dateFormat = "yyyy-MM-dd_HH-mm-ss"
-        let dest     = folder.appendingPathComponent("dailywall_\(f.string(from: Date())).jpg")
+        let dest     = folder.appendingPathComponent("curatoris_\(f.string(from: Date())).jpg")
         try? FileManager.default.copyItem(at: src, to: dest)
     }
 
@@ -260,7 +260,7 @@ class MenuBarController: NSObject, ObservableObject {
         guard notifyOnUpdate else { return }
         let content       = UNMutableNotificationContent()
         content.title     = "Wallpaper Updated"
-        content.body      = "Your wallpaper has been refreshed by DailyWall."
+        content.body      = "Your wallpaper has been refreshed by Curatoris."
         let request       = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
         UNUserNotificationCenter.current().add(request)
     }
@@ -310,7 +310,7 @@ class MenuBarController: NSObject, ObservableObject {
 
     @objc private func checkForUpdates(silentIfUpToDate: Bool = false) {
         Task { @MainActor in
-            guard let apiURL = URL(string: "https://api.github.com/repos/mattkje/DailyWall/releases/latest") else { return }
+            guard let apiURL = URL(string: "https://api.github.com/repos/mattkje/Curatoris/releases/latest") else { return }
             struct Release: Decodable { let tag_name: String; let html_url: String }
 
             func normalize(_ v: String) -> String {
@@ -382,7 +382,7 @@ protocol WallpaperSource {
 struct WallpaperSourceProvider {
     func source(forSelectionKey key: String) -> WallpaperSource {
         switch MenuBarController.BuiltInSource(rawValue: key) {
-        case .dailywall: return DailyWallSource()
+        case .curatoris: return CuratorisSource()
         case .bing:      return BingSource()
         case .picsum:    return PicsumSource()
         case .pexels:    return PexelsSource()
@@ -408,16 +408,16 @@ struct PicsumSource: WallpaperSource {
     }
 }
 
-struct DailyWallSource: WallpaperSource {
+struct CuratorisSource: WallpaperSource {
     private func apiKey() -> String? {
         if let env = ProcessInfo.processInfo.environment["DAILY_WALL_API_KEY"], !env.isEmpty { return env }
-        if let plist = Bundle.main.object(forInfoDictionaryKey: "DailyWallAPIKey") as? String, !plist.isEmpty { return plist }
+        if let plist = Bundle.main.object(forInfoDictionaryKey: "CuratorisAPIKey") as? String, !plist.isEmpty { return plist }
         return nil
     }
 
     func fetchImageURL() async throws -> URL? {
         guard let apiKey = apiKey() else { return nil }
-        let comps = URLComponents(string: "https://dailywall.mattikjellstadli.com/api/daily-wall")!
+        let comps = URLComponents(string: "https://curatoris.mattikjellstadli.com/api/daily-wall")!
         var request = URLRequest(url: comps.url!)
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         let (data, response) = try await URLSession.shared.data(for: request)

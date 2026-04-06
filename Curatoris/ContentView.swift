@@ -1,6 +1,6 @@
 //
 //  ContentView.swift
-//  DailyWall
+//  Curatoris
 //
 //  Created by Matti Kjellstadli on 06/03/2026.
 //

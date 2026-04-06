@@ -3,7 +3,7 @@ import SwiftData
 import AppKit
 
 @main
-struct DailyWallApp: App {
+struct CuratorisApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Item.self,

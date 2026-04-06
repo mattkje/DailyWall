@@ -20,7 +20,7 @@ struct CustomSource: Codable, Identifiable, Equatable {
 // MARK: - Keychain Helper
 
 public enum KeychainHelper {
-    private static let service = "com.dailywall.apikeys"
+    private static let service = "com.curatoris.apikeys"
 
     static func save(key: String, for urlString: String) {
         let deleteQuery: [CFString: Any] = [
@@ -407,11 +407,11 @@ public struct SettingsView: View {
     private let hours       = Array(0..<24)
     private let fillModes   = ["Fill", "Fit", "Stretch", "Center", "Tile"]
     private let historyLimits = [10, 20, 50, 100]
-    private let builtInSources = ["DailyWall", "Bing (Only 1080p)", "Picsum", "Pexels"]
+    private let builtInSources = ["Curatoris", "Bing (Only 1080p)", "Picsum", "Pexels"]
 
     private var hourlySupportedForCurrentSource: Bool {
         let src = model.imageSource
-        return !(src == "DailyWall" || src == "Bing (Only 1080p)")
+        return !(src == "Curatoris" || src == "Bing (Only 1080p)")
     }
 
     public init() {}
@@ -486,7 +486,7 @@ public struct SettingsView: View {
                     Text("Enable Auto Refresh to refresh once per day.")
                         .font(.caption).foregroundColor(.secondary)
                 } else if !hourlySupportedForCurrentSource {
-                    Text("Hourly refresh is not available for this source. DailyWall and Bing only change once per day.")
+                    Text("Hourly refresh is not available for this source. Curatoris and Bing only change once per day.")
                         .font(.caption).foregroundColor(.secondary)
                 } else if model.everyHourEnabled {
                     Text("Hourly override is active. The preferred daily time will be ignored.")
@@ -495,7 +495,7 @@ public struct SettingsView: View {
                     Text("Daily is the default. Enable Manual Refresh Time to pick a preferred hour.")
                         .font(.caption).foregroundColor(.secondary)
                 } else {
-                    Text("If the Mac was asleep at the preferred time, DailyWall will catch up when it wakes.")
+                    Text("If the Mac was asleep at the preferred time, Curatoris will catch up when it wakes.")
                         .font(.caption).foregroundColor(.secondary)
                 }
             } header: {
@@ -575,7 +575,7 @@ public struct SettingsView: View {
             } header: {
                 Label("Wallpaper Source", systemImage: "photo.stack.fill")
             } footer: {
-                Text("Built-in sources are maintained by DailyWall. Custom sources can be added in the APIs section.")
+                Text("Built-in sources are maintained by Curatoris. Custom sources can be added in the APIs section.")
                     .font(.caption)
             }
 
@@ -883,7 +883,7 @@ public struct SettingsView: View {
         KeychainHelper.delete(for: src.url)
         model.customSources.removeAll { $0.url == src.url }
         if model.imageSource == src.url {
-            model.imageSource = builtInSources.first ?? "DailyWall"
+            model.imageSource = builtInSources.first ?? "Curatoris"
         }
     }
 
@@ -895,7 +895,7 @@ public struct SettingsView: View {
     private func checkForUpdate() {
         Task { @MainActor in
             let repoOwner = "mattkje"
-            let repoName  = "DailyWall"
+            let repoName  = "Curatoris"
             guard let apiURL = URL(string: "https://api.github.com/repos/\(repoOwner)/\(repoName)/releases/latest") else { return }
             struct Release: Decodable { let tag_name: String; let html_url: String }
             func normalizeVersion(_ v: String) -> String {

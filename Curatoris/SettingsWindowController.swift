@@ -7,7 +7,7 @@ final class SettingsWindowController: NSWindowController {
     private init() {
         let hosting = NSHostingController(rootView: SettingsView())
         let window = NSWindow(contentViewController: hosting)
-        window.title = "DailyWall Settings"
+        window.title = "Curatoris Settings"
         window.styleMask = [.titled, .closable, .miniaturizable]
         window.setContentSize(NSSize(width: 760, height: 520))
         super.init(window: window)

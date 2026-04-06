@@ -5,7 +5,7 @@ final class WallpaperManager {
     func downloadImage(from url: URL) async throws -> String {
         let (data, _) = try await URLSession.shared.data(from: url)
         let fileURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("dailywall_\(UUID().uuidString).jpg")
+            .appendingPathComponent("curatoris_\(UUID().uuidString).jpg")
         try data.write(to: fileURL, options: .atomic)
         return fileURL.path
     }

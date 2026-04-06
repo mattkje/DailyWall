@@ -1,10 +1,10 @@
-# DailyWall
+# Curatoris
 
-A lightweight macOS menu bar application that automatically updates your desktop wallpaper with beautiful images daily, sourced from DailyWall, Bing, Picsum, Pexels, or your own custom API endpoint.
+A lightweight macOS menu bar application that automatically updates your desktop wallpaper with beautiful images daily, sourced from Curatoris, Bing, Picsum, Pexels, or your own custom API endpoint.
 
 ## Features
 
-- Fetch wallpapers from multiple sources: **DailyWall**, **Bing**, **Picsum**, **Pexels**, and **Custom API endpoints**
+- Fetch wallpapers from multiple sources: **Curatoris**, **Bing**, **Picsum**, **Pexels**, and **Custom API endpoints**
 - Automatic daily refresh at your chosen time
 - Hourly refresh option (for supported sources)
 - Refresh on wake from sleep
@@ -21,15 +21,15 @@ A lightweight macOS menu bar application that automatically updates your desktop
 
 ## Installation
 
-Download the latest release from the [Releases](../../releases) page and drag **DailyWall.app** to your Applications folder.
+Download the latest release from the [Releases](../../releases) page and drag **Curatoris.app** to your Applications folder.
 
 Alternatively, clone the repository and build the project in Xcode.
 
 ## Configuration
 
-### DailyWall API Key
+### Curatoris API Key
 
-The DailyWall source requires a private API key. This key is not publicly available or distributed, which means only the original developer can build and run the app using this source.
+The Curatoris source requires a private API key. This key is not publicly available or distributed, which means only the original developer can build and run the app using this source.
 
 ### Pexels API Key (optional)
 
@@ -62,7 +62,7 @@ If no key is configured for either source, it is silently skipped.
 
 **Check for Updates** — Check GitHub for a newer release
 
-**About DailyWall** — View app info
+**About Curatoris** — View app info
 
 **Quit** — Close the application
 
@@ -76,7 +76,7 @@ The Settings window is organised into five panes accessible from the sidebar:
 - **Notifications** — Show a macOS notification each time the wallpaper changes
 
 #### Images
-- **Wallpaper Source** — Choose from built-in sources (DailyWall, Bing, Picsum, Pexels) or any custom API endpoint you have added
+- **Wallpaper Source** — Choose from built-in sources (Curatoris, Bing, Picsum, Pexels) or any custom API endpoint you have added
 - **Fill Mode** — Control how the image is scaled to fit your screen (Fill, Fit, Stretch, Center, Tile)
 - **Storage** — Optionally save every new wallpaper as a JPEG to a chosen folder
 
@@ -95,7 +95,7 @@ The Settings window is organised into five panes accessible from the sidebar:
   - JSON array where the first item contains a `url` key
 
 #### Advanced
-- **Open at Login** — Launch DailyWall automatically on login
+- **Open at Login** — Launch Curatoris automatically on login
 - **History** — Clear the last update record or all wallpaper history
 
 ## How It Works
@@ -143,19 +143,19 @@ Settings are persisted using `UserDefaults`:
 | `customSourcesV2` | JSON-encoded array of custom API `CustomSource` objects |
 | `openAtLogin` | Launch at login toggle state |
 
-API keys for custom endpoints are stored in the macOS **Keychain** under the service `com.dailywall.apikeys`.
+API keys for custom endpoints are stored in the macOS **Keychain** under the service `com.curatoris.apikeys`.
 
 ### Network
 
 | Source | Endpoint |
 |--------|----------|
-| DailyWall | `https://dailywall.mattikjellstadli.com/api/daily-wall` |
+| Curatoris | `https://curatoris.mattikjellstadli.com/api/daily-wall` |
 | Bing | `https://www.bing.com/HPImageArchive.aspx?format=js&idx=0&n=1` |
 | Picsum | `https://picsum.photos/3840/2160` |
 | Pexels | `https://api.pexels.com/v1/search` |
 | Custom | User-supplied HTTPS endpoint |
 
-Requires internet connectivity. DailyWall and Pexels endpoints require an `Authorization: Bearer <key>` header.
+Requires internet connectivity. Curatoris and Pexels endpoints require an `Authorization: Bearer <key>` header.
 
 ### Permissions
 

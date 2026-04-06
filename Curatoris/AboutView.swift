@@ -64,7 +64,7 @@ private struct AboutView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
                     .shadow(color: .black.opacity(0.18), radius: 12, x: 0, y: 4)
 
-                    Text("DailyWall")
+                    Text("Curatoris")
                         .font(.system(size: 26, weight: .bold, design: .rounded))
 
                     Text("Version \(version)")
@@ -107,12 +107,12 @@ private struct AboutView: View {
                     LinkButton(
                         title: "Website",
                         systemImage: "globe",
-                        url: "https://dailywall.mattikjellstadli.com"
+                        url: "https://mattikjellstadli.com/product/curatoris"
                     )
                     LinkButton(
                         title: "GitHub",
                         systemImage: "chevron.left.forwardslash.chevron.right",
-                        url: "https://github.com/mattkje/DailyWall"
+                        url: "https://github.com/mattkje/Curatoris"
                     )
                 }
                 .padding(.vertical, 20)
