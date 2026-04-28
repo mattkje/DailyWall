@@ -39,6 +39,12 @@
 		104943CD2F83F63F008E312F /* WallpaperManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 104943922F83F63F008E312F /* WallpaperManager.swift */; };
 		104943D02F83F63F008E312F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 104943962F83F63F008E312F /* Assets.xcassets */; };
 		104943D12F83F63F008E312F /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 104943952F83F63F008E312F /* AppIcon.icon */; };
+		10B54CCF2F9D5DF900672CAC /* GalleryWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10B54CCE2F9D5DF700672CAC /* GalleryWindowController.swift */; };
+		10B54CD02F9D5DF900672CAC /* GalleryWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10B54CCE2F9D5DF700672CAC /* GalleryWindowController.swift */; };
+		10B54CD12F9D5DF900672CAC /* GalleryWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10B54CCE2F9D5DF700672CAC /* GalleryWindowController.swift */; };
+		10B54CD32F9D5F4600672CAC /* GalleryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10B54CD22F9D5F4300672CAC /* GalleryView.swift */; };
+		10B54CD42F9D5F4600672CAC /* GalleryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10B54CD22F9D5F4300672CAC /* GalleryView.swift */; };
+		10B54CD52F9D5F4600672CAC /* GalleryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10B54CD22F9D5F4300672CAC /* GalleryView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -77,6 +83,8 @@
 		104943E02F83F695008E312F /* CuratorisTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CuratorisTests.swift; sourceTree = "<group>"; };
 		104943E22F83F695008E312F /* CuratorisUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CuratorisUITests.swift; sourceTree = "<group>"; };
 		104943E32F83F695008E312F /* CuratorisUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CuratorisUITestsLaunchTests.swift; sourceTree = "<group>"; };
+		10B54CCE2F9D5DF700672CAC /* GalleryWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GalleryWindowController.swift; sourceTree = "<group>"; };
+		10B54CD22F9D5F4300672CAC /* GalleryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GalleryView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -135,6 +143,8 @@
 		1049439F2F83F63F008E312F /* Curatoris */ = {
 			isa = PBXGroup;
 			children = (
+				10B54CD22F9D5F4300672CAC /* GalleryView.swift */,
+				10B54CCE2F9D5DF700672CAC /* GalleryWindowController.swift */,
 				104943932F83F63F008E312F /* utilities */,
 				104943942F83F63F008E312F /* AboutView.swift */,
 				104943952F83F63F008E312F /* AppIcon.icon */,
@@ -316,9 +326,11 @@
 				104943C62F83F63F008E312F /* SettingsView.swift in Sources */,
 				104943C82F83F63F008E312F /* ContentView.swift in Sources */,
 				104943C92F83F63F008E312F /* MenuBarController.swift in Sources */,
+				10B54CD12F9D5DF900672CAC /* GalleryWindowController.swift in Sources */,
 				104943CA2F83F63F008E312F /* SettingsWindowController.swift in Sources */,
 				104943CC2F83F63F008E312F /* AboutView.swift in Sources */,
 				104943CD2F83F63F008E312F /* WallpaperManager.swift in Sources */,
+				10B54CD42F9D5F4600672CAC /* GalleryView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -331,9 +343,11 @@
 				104943A82F83F63F008E312F /* SettingsView.swift in Sources */,
 				104943AA2F83F63F008E312F /* ContentView.swift in Sources */,
 				104943AB2F83F63F008E312F /* MenuBarController.swift in Sources */,
+				10B54CCF2F9D5DF900672CAC /* GalleryWindowController.swift in Sources */,
 				104943AC2F83F63F008E312F /* SettingsWindowController.swift in Sources */,
 				104943AE2F83F63F008E312F /* AboutView.swift in Sources */,
 				104943AF2F83F63F008E312F /* WallpaperManager.swift in Sources */,
+				10B54CD32F9D5F4600672CAC /* GalleryView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -346,9 +360,11 @@
 				104943BB2F83F63F008E312F /* SettingsView.swift in Sources */,
 				104943BD2F83F63F008E312F /* ContentView.swift in Sources */,
 				104943BE2F83F63F008E312F /* MenuBarController.swift in Sources */,
+				10B54CD02F9D5DF900672CAC /* GalleryWindowController.swift in Sources */,
 				104943BF2F83F63F008E312F /* SettingsWindowController.swift in Sources */,
 				104943C12F83F63F008E312F /* AboutView.swift in Sources */,
 				104943C22F83F63F008E312F /* WallpaperManager.swift in Sources */,
+				10B54CD52F9D5F4600672CAC /* GalleryView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -499,7 +515,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
@@ -521,7 +537,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.7.0;
+				MARKETING_VERSION = 1.8.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mattkje.Curatoris;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -539,7 +555,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
@@ -561,7 +577,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.7.0;
+				MARKETING_VERSION = 1.8.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mattkje.Curatoris;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;

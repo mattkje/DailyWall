@@ -1,7 +1,7 @@
-import SwiftUI
-import Combine
+import Foundation
 import AppKit
-import Security
+import Combine
+import SwiftUI
 
 // MARK: - Custom Source Model
 
@@ -366,12 +366,26 @@ private struct SourceRow: View {
 
 private struct HistoryRow: View {
     let entry: WallpaperHistoryEntry
+    @ObservedObject var model: SettingsModel
 
     var body: some View {
         HStack(spacing: 10) {
-            Image(systemName: "photo")
-                .foregroundColor(.secondary)
-                .frame(width: 20)
+            AsyncImage(url: URL(string: entry.url)) { phase in
+                switch phase {
+                case .empty:
+                    Color.gray.frame(width: 40, height: 25).cornerRadius(4)
+                case .success(let image):
+                    image.resizable().aspectRatio(contentMode: .fill)
+                        .frame(width: 40, height: 25)
+                        .clipped()
+                        .cornerRadius(4)
+                case .failure:
+                    Image(systemName: "photo").foregroundColor(.secondary)
+                        .frame(width: 40, height: 25)
+                @unknown default:
+                    Color.gray.frame(width: 40, height: 25)
+                }
+            }
             VStack(alignment: .leading, spacing: 2) {
                 Text(entry.source)
                     .font(.body)
@@ -387,8 +401,43 @@ private struct HistoryRow: View {
             }
             .buttonStyle(.borderless)
             .help("Open image URL")
+            Button("Apply") {
+                applyWallpaper()
+            }
+            .buttonStyle(.borderless)
+            .help("Set this wallpaper and disable auto refresh")
         }
         .padding(.vertical, 2)
+    }
+
+    private func applyWallpaper() {
+        // Disable auto refresh
+        model.autoRefreshEnabled = false
+        // Set wallpaper using MenuBarController logic
+        if let url = URL(string: entry.url) {
+            Task {
+                let fillMode = nsImageScaling(for: model.wallpaperFillMode)
+                do {
+                    let manager = WallpaperManager()
+                    let localPath = try await manager.downloadImage(from: url)
+                    try manager.setDesktopWallpaper(to: localPath, fillMode: fillMode)
+                    model.lastUpdateTime = Date()
+                } catch {
+                    // Optionally handle error
+                }
+            }
+        }
+    }
+
+    private func nsImageScaling(for mode: String) -> NSImageScaling {
+        switch mode.lowercased() {
+        case "fill": return .scaleProportionallyUpOrDown
+        case "fit": return .scaleProportionallyDown
+        case "stretch": return .scaleAxesIndependently
+        case "center": return .scaleNone
+        case "tile": return .scaleNone // macOS handles tiling via allowClipping, not scaling
+        default: return .scaleProportionallyUpOrDown
+        }
     }
 }
 
@@ -663,7 +712,7 @@ public struct SettingsView: View {
             } else {
                 Section {
                     ForEach(model.wallpaperHistory.reversed()) { entry in
-                        HistoryRow(entry: entry)
+                        HistoryRow(entry: entry, model: model)
                     }
                 } header: {
                     HStack {
@@ -911,7 +960,7 @@ public struct SettingsView: View {
             let repoOwner = "mattkje"
             let repoName  = "Curatoris"
             guard let apiURL = URL(string: "https://api.github.com/repos/\(repoOwner)/\(repoName)/releases/latest") else { return }
-            struct Release: Decodable { let tag_name: String; let html_url: String }
+            struct Release: Decodable { let tag_name: String, html_url: String }
             func normalizeVersion(_ v: String) -> String {
                 var s = v.trimmingCharacters(in: .whitespacesAndNewlines)
                 if s.hasPrefix("v") || s.hasPrefix("V") { s.removeFirst() }

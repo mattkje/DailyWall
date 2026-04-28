@@ -1,0 +1,474 @@
+import SwiftUI
+import Foundation
+import AppKit
+
+struct Wallpaper: Identifiable, Hashable, Decodable {
+    let id: Int
+    let url: String
+    let thumb: String
+    let title: String
+    let category: String
+    let description: String?
+    let date: String?
+    let createdAt: String?
+    let updatedAt: String?
+}
+
+struct AlertMessage: Identifiable {
+    let id = UUID()
+    let message: String
+}
+
+struct GalleryView: View {
+    @State private var searchText = ""
+    @State private var selectedCategory: String = "All"
+    @State private var wallpapers: [Wallpaper] = []
+    @State private var categories: [String] = predefinedCategories
+    @State private var isLoading = false
+    @State private var errorMessage: String? = nil
+    @State private var page: Int = 0
+    @State private var hasMore: Bool = true
+    private let pageSize = 50
+    private let apiBase = "https://curatoris.mattikjellstadli.com/api/curatoris"
+    private var apiKey: String? {
+        if let env = ProcessInfo.processInfo.environment["CURATORIS_API_KEY"], !env.isEmpty { return env }
+        if let plist = Bundle.main.object(forInfoDictionaryKey: "CuratorisAPIKey") as? String, !plist.isEmpty { return plist }
+        return nil
+    }
+
+    @State private var showSetWallpaperSheet = false
+    @State private var selectedWallpaper: Wallpaper? = nil
+    @State private var wallpaperActionMessage: AlertMessage? = nil
+
+    var filteredWallpapers: [Wallpaper] {
+        let list = wallpapers.filter { selectedCategory == "All" || $0.category.localizedCaseInsensitiveContains(selectedCategory) }
+        if searchText.isEmpty { return list }
+        return list.filter { $0.title.localizedCaseInsensitiveContains(searchText) || ($0.description ?? "").localizedCaseInsensitiveContains(searchText) }
+    }
+
+    public var body: some View {
+        NavigationSplitView {
+            // Sidebar: Search + Categories similar to SettingsView
+            VStack(alignment: .leading, spacing: 8) {
+                SearchBar(text: $searchText)
+                    .padding([.top, .horizontal])
+
+                Divider().padding(.horizontal)
+
+                Text("Categories")
+                    .font(.headline)
+                    .padding(.horizontal)
+
+                List {
+                    ForEach(categories, id: \.self) { cat in
+                        Button(action: {
+                            if selectedCategory != cat {
+                                selectedCategory = cat
+                                reloadWallpapers()
+                            }
+                        }) {
+                            ZStack {
+                                if selectedCategory == cat {
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .fill(Color.accentColor.opacity(0.15))
+                                } else {
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .fill(Color.accentColor.opacity(0.001))
+                                }
+                                HStack {
+                                    Text(cat.capitalized)
+                                        .foregroundColor(selectedCategory == cat ? .accentColor : .primary)
+                                    Spacer()
+                                }
+                                .padding(.vertical, 6)
+                                .padding(.horizontal, 8)
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .buttonStyle(PlainButtonStyle())
+                        .contentShape(Rectangle())
+                        .listRowInsets(EdgeInsets())
+                    }
+                }
+                .listStyle(SidebarListStyle())
+            }
+            .frame(minWidth: 220)
+        } detail: {
+            Group {
+                if isLoading {
+                    ProgressView().padding()
+                } else if let errorMessage = errorMessage {
+                    VStack(spacing: 12) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.system(size: 40))
+                            .foregroundColor(.orange)
+                        Text(errorMessage)
+                            .foregroundColor(.red)
+                            .multilineTextAlignment(.center)
+                    }
+                    .padding()
+                } else if filteredWallpapers.isEmpty {
+                    VStack(spacing: 12) {
+                        Image(systemName: "photo.on.rectangle.angled")
+                            .font(.system(size: 40))
+                            .foregroundColor(.secondary)
+                        Text("No wallpapers found.")
+                            .foregroundColor(.secondary)
+                    }
+                    .padding()
+                } else {
+                    ScrollView {
+                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 160), spacing: 16)], spacing: 16) {
+                            ForEach(filteredWallpapers) { wallpaper in
+                                WallpaperCard(
+                                    wallpaper: wallpaper,
+                                    isSelected: selectedWallpaper?.id == wallpaper.id,
+                                    onTap: {
+                                        selectedWallpaper = wallpaper
+                                        showSetWallpaperSheet = true
+                                    }
+                                )
+                            }
+                        }
+                        .padding()
+                        if hasMore {
+                            Button(action: { loadWallpapers(append: true) }) {
+                                HStack {
+                                    if isLoading {
+                                        ProgressView()
+                                    }
+                                    Image(systemName: "arrow.down.circle")
+                                    Text("Load More")
+                                }
+                                .padding(.vertical, 8)
+                                .padding(.horizontal, 16)
+                                .background(Color.accentColor.opacity(0.1))
+                                .cornerRadius(8)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                            .padding()
+                            .disabled(isLoading)
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Gallery")
+        }
+        .onAppear(perform: initialLoad)
+        .sheet(isPresented: $showSetWallpaperSheet) {
+            if let wallpaper = selectedWallpaper {
+                SetWallpaperSheet(wallpaper: wallpaper, onSet: { url in
+                    setWallpaper(from: url)
+                }, onCancel: {
+                    showSetWallpaperSheet = false
+                })
+            }
+        }
+        .alert(item: $wallpaperActionMessage) { msg in
+            Alert(title: Text(msg.message))
+        }
+        .frame(minWidth: 700, minHeight: 420)
+    }
+
+    private func initialLoad() {
+        //fetchCategories()
+        reloadWallpapers()
+    }
+
+    private func reloadWallpapers() {
+        page = 0
+        hasMore = true
+        wallpapers = []
+        loadWallpapers(append: false)
+    }
+
+    private func fetchCategories() {
+        guard let apiKey = apiKey else { errorMessage = "Missing API key"; isLoading = false; return }
+        isLoading = true
+        errorMessage = nil
+        let urlString = "\(apiBase)/categories"
+        guard let url = URL(string: urlString) else { isLoading = false; return }
+        var req = URLRequest(url: url)
+        req.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        URLSession.shared.dataTask(with: req) { data, response, error in
+            guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+                DispatchQueue.main.async { errorMessage = "Failed to fetch categories: Unauthorized or server error" }
+                isLoading = false
+                return
+            }
+            if let data = data, let cats = try? JSONDecoder().decode([String].self, from: data) {
+                DispatchQueue.main.async {
+                    categories = ["All"] + cats
+                }
+            }
+        }.resume()
+    }
+
+    private func normalizedCategory(_ category: String) -> String {
+        let match = predefinedCategories.first {
+            $0.lowercased() == category.lowercased()
+        }
+        return match ?? "Other"
+    }
+
+    private func loadWallpapers(append: Bool) {
+        guard let apiKey = apiKey else { errorMessage = "Missing API key"; isLoading = false; return }
+        isLoading = true
+        errorMessage = nil
+        // Use the working endpoint and auth pattern
+        let urlString = "\(apiBase)/all"
+        guard let url = URL(string: urlString) else { isLoading = false; return }
+        var req = URLRequest(url: url)
+        req.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        URLSession.shared.dataTask(with: req) { data, response, error in
+            guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+                DispatchQueue.main.async { isLoading = false; errorMessage = "Failed to fetch wallpapers: Unauthorized or server error" }
+                return
+            }
+            DispatchQueue.main.async {
+                isLoading = false
+                if let error = error {
+                    errorMessage = error.localizedDescription
+                    return
+                }
+                guard let data = data else {
+                    errorMessage = "No data from server"
+                    return
+                }
+                if let arr = try? JSONDecoder().decode([Wallpaper].self, from: data) {
+                    let normalized = arr.map { wp in
+                        Wallpaper(
+                            id: wp.id,
+                            url: wp.url,
+                            thumb: wp.thumb,
+                            title: wp.title,
+                            category: normalizedCategory(wp.category),
+                            description: wp.description,
+                            date: wp.date,
+                            createdAt: wp.createdAt,
+                            updatedAt: wp.updatedAt
+                        )
+                    }
+
+                    if append {
+                        wallpapers += normalized
+                    } else {
+                        wallpapers = normalized
+                    }
+
+                    hasMore = false
+                } else if let raw = String(data: data, encoding: .utf8) {
+                    errorMessage = "Failed to decode wallpapers: Unexpected format\n" + raw
+                } else {
+                    errorMessage = "Failed to decode wallpapers: Unexpected format (not UTF-8)"
+                }
+            }
+        }.resume()
+    }
+
+    private func setWallpaper(from urlString: String) {
+        guard let url = URL(string: urlString) else {
+            wallpaperActionMessage = AlertMessage(message: "Invalid wallpaper URL.")
+            return
+        }
+        Task {
+            do {
+                let manager = WallpaperManager()
+                let path = try await manager.downloadImage(from: url)
+                try manager.setDesktopWallpaper(to: path)
+                DispatchQueue.main.async {
+                    wallpaperActionMessage = AlertMessage(message: "Wallpaper set successfully!")
+                    showSetWallpaperSheet = false
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    wallpaperActionMessage = AlertMessage(message: "Failed to set wallpaper: \(error.localizedDescription)")
+                }
+            }
+        }
+    }
+}
+
+private let predefinedCategories: [String] = [
+    "All",
+    "Nature",
+    "Space",
+    "Abstract",
+    "Minimal",
+    "Architecture",
+    "Cityscapes",
+    "Technology",
+    "Gaming",
+    "Art",
+    "Dark",
+    "Gradients",
+    "Other"
+]
+
+struct WallpaperCard: View {
+    let wallpaper: Wallpaper
+    let isSelected: Bool
+    let onTap: () -> Void
+    @State private var isHovering = false
+
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color(NSColor.windowBackgroundColor))
+                .shadow(radius: isHovering ? 6 : 2)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(isSelected ? Color.accentColor : Color.clear, lineWidth: 2)
+                )
+            VStack(spacing: 0) {
+                GeometryReader { geo in
+                    AsyncImage(url: URL(string: wallpaper.thumb)) { phase in
+                        switch phase {
+                        case .empty:
+                            ShimmerView()
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: geo.size.width, height: geo.size.height)
+                                .clipped()
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                        case .failure:
+                            Image(systemName: "photo").foregroundColor(.secondary)
+                                .frame(width: geo.size.width, height: geo.size.height)
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                        @unknown default:
+                            Color.gray
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                    }
+                }
+                .frame(height: 100)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(wallpaper.title)
+                        .font(.caption)
+                        .lineLimit(1)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Text(wallpaper.category)
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                    if let date = wallpaper.date {
+                        Text(date)
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                            .lineLimit(1)
+                    }
+                }
+                .padding(.horizontal, 6)
+                .padding(.bottom, 14)
+            }
+            .frame(width: 160, height: 140)
+        }
+        .frame(width: 160, height: 140)
+        .contentShape(Rectangle())
+        .onTapGesture { onTap() }
+        .onHover { hovering in
+            isHovering = hovering
+            if hovering {
+                NSCursor.pointingHand.push()
+            } else {
+                NSCursor.pop()
+            }
+        }
+        .animation(.easeInOut(duration: 0.15), value: isHovering)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(Text(wallpaper.title))
+    }
+}
+
+// Shimmer effect for loading placeholder
+struct ShimmerView: View {
+    @State private var phase: CGFloat = 0
+    var body: some View {
+        Rectangle()
+            .fill(
+                LinearGradient(gradient: Gradient(colors: [Color.gray.opacity(0.3), Color.gray.opacity(0.1), Color.gray.opacity(0.3)]),
+                               startPoint: .leading, endPoint: .trailing)
+            )
+            .mask(
+                Rectangle()
+                    .fill(Color.white)
+                    .opacity(0.7)
+                    .blur(radius: 8)
+                    .offset(x: phase * 200 - 100)
+            )
+            .onAppear {
+                withAnimation(Animation.linear(duration: 1.2).repeatForever(autoreverses: false)) {
+                    phase = 1
+                }
+            }
+    }
+}
+
+// Simple SearchBar for macOS
+struct SearchBar: NSViewRepresentable {
+    @Binding var text: String
+
+    func makeNSView(context: Context) -> NSSearchField {
+        let searchField = NSSearchField(string: "")
+        searchField.delegate = context.coordinator
+        return searchField
+    }
+
+    func updateNSView(_ nsView: NSSearchField, context: Context) {
+        nsView.stringValue = text
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    class Coordinator: NSObject, NSSearchFieldDelegate {
+        var parent: SearchBar
+        init(_ parent: SearchBar) { self.parent = parent }
+        func controlTextDidChange(_ obj: Notification) {
+            if let field = obj.object as? NSSearchField {
+                parent.text = field.stringValue
+            }
+        }
+    }
+}
+
+struct SetWallpaperSheet: View {
+    let wallpaper: Wallpaper
+    let onSet: (String) -> Void
+    let onCancel: () -> Void
+    var body: some View {
+        VStack(spacing: 20) {
+            Text("Set Wallpaper")
+                .font(.headline)
+            AsyncImage(url: URL(string: wallpaper.url)) { phase in
+                switch phase {
+                case .empty:
+                    Color.gray
+                case .success(let image):
+                    image.resizable().aspectRatio(contentMode: .fit)
+                case .failure:
+                    Image(systemName: "photo").foregroundColor(.secondary)
+                @unknown default:
+                    Color.gray
+                }
+            }
+            .frame(width: 320, height: 180)
+            Text(wallpaper.title).font(.title3)
+            HStack {
+                Button("Set as Wallpaper") {
+                    onSet(wallpaper.url)
+                }
+                .keyboardShortcut(.defaultAction)
+                Button("Cancel") {
+                    onCancel()
+                }
+            }
+        }
+        .padding(32)
+        .frame(minWidth: 400)
+    }
+}

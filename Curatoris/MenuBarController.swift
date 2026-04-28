@@ -107,6 +107,7 @@ class MenuBarController: NSObject, ObservableObject {
 
         let setItem = NSMenuItem(title: "Set Wallpaper Now", action: #selector(setWallpaper(_:)), keyEquivalent: "w")
         setItem.target = self
+        setItem.image = NSImage(systemSymbolName: "square.and.arrow.down", accessibilityDescription: nil)
         menu.addItem(setItem)
 
         let autoItem = NSMenuItem(
@@ -119,19 +120,35 @@ class MenuBarController: NSObject, ObservableObject {
         
         // Only show previous/next if Curatoris is selected
         if isCuratorisSourceSelected() {
+            menu.addItem(.separator())
+            
+            let cuatorisLabel = NSMenuItem(title: "Curatoris Source Features", action: nil, keyEquivalent: "")
+            cuatorisLabel.isEnabled = false
+            cuatorisLabel.image = NSImage(named: "MenuBarIcon")
+            menu.addItem(cuatorisLabel)
+
+            let galleryItem = NSMenuItem(title: "Gallery (Beta)", action: #selector(openGallery), keyEquivalent: "")
+            galleryItem.target = self
+            galleryItem.image = NSImage(systemSymbolName: "photo.fill", accessibilityDescription: nil)
+            menu.addItem(galleryItem)
+
             let previousItem = NSMenuItem(title: "Previous", action: #selector(previous(_:)), keyEquivalent: "")
             previousItem.target = self
+            previousItem.image = NSImage(systemSymbolName: "chevron.left", accessibilityDescription: nil)
             previousItem.isEnabled = curatorisChainDate != nil && curatorisChainDate! > Date(timeIntervalSince1970: 0)
             menu.addItem(previousItem)
 
             let nextItem = NSMenuItem(title: "Next", action: #selector(next(_:)), keyEquivalent: "")
             nextItem.target = self
+            let calendar = Calendar.current
             if let chainDate = curatorisChainDate {
-                let today = self.today()
-                nextItem.isEnabled = Calendar.current.compare(chainDate, to: today, toGranularity: .day) == .orderedAscending
+                let chainDay = calendar.startOfDay(for: chainDate)
+                let todayDay = calendar.startOfDay(for: Date())
+                nextItem.isEnabled = chainDay < todayDay
             } else {
                 nextItem.isEnabled = false
             }
+            nextItem.image = NSImage(systemSymbolName: "chevron.right", accessibilityDescription: nil)
             menu.addItem(nextItem)
         }
 
@@ -143,7 +160,7 @@ class MenuBarController: NSObject, ObservableObject {
 
         menu.addItem(.separator())
 
-        let settingsItem = NSMenuItem(title: "Settings…", action: #selector(openSettings), keyEquivalent: ",")
+        let settingsItem = NSMenuItem(title: "Settings", action: #selector(openSettings), keyEquivalent: ",")
         settingsItem.target = self
         menu.addItem(settingsItem)
 
@@ -174,6 +191,7 @@ class MenuBarController: NSObject, ObservableObject {
 
     @objc private func toggleAutoRefresh()     { autoRefreshEnabled.toggle() }
     @objc private func quitApp()               { NSApp.terminate(nil) }
+    @objc private func openGallery()           { GalleryWindowController.shared.showWindow() }
     @objc private func openSettings()          { SettingsWindowController.shared.showWindow() }
     @objc private func showAbout()             { AboutWindowController.shared.showWindow() }
     @objc private func checkForUpdatesTapped() { checkForUpdates(silentIfUpToDate: false) }
@@ -542,7 +560,7 @@ struct CuratorisSource: WallpaperSource {
         guard let apiKey = apiKey() else { return nil }
         var comps: URLComponents
         if let date = date {
-            comps = URLComponents(string: "https://curatoris.mattikjellstadli.com/api/curatoris/\(date)")!
+            comps = URLComponents(string: "https://curatoris.mattikjellstadli.com/api/curatoris/date/\(date)")!
         } else {
             comps = URLComponents(string: "https://curatoris.mattikjellstadli.com/api/curatoris")!
         }
